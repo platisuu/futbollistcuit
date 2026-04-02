@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista Futbolera</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f5f4f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+#app { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem; }
+.header { text-align: center; margin-bottom: 1.5rem; }
+.header h1 { font-size: 26px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.5px; }
+.header .sub { font-size: 13px; color: #888; margin-top: 4px; }
+.question-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
+.question-text { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 3px; }
+.question-meta { font-size: 12px; color: #999; }
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 0.8rem; }
+.stat-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 0.65rem; text-align: center; }
+.stat-label { font-size: 11px; color: #999; margin-bottom: 2px; }
+.stat-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+.timer-bar-wrap { height: 5px; background: #e8e8e8; border-radius: 3px; margin-bottom: 0.8rem; overflow: hidden; }
+.timer-bar { height: 100%; background: #1D9E75; border-radius: 3px; transition: width 0.5s linear, background 0.5s; }
+.input-wrap { position: relative; margin-bottom: 0.8rem; }
+.input-row { display: flex; gap: 8px; }
+.input-row input { flex: 1; font-size: 15px; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 10px; background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.15s; }
+.input-row input:focus { border-color: #1D9E75; box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+.input-row button { padding: 10px 16px; border: 1.5px solid #ddd; border-radius: 10px; background: #fff; color: #555; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+.input-row button:hover { background: #f5f5f5; border-color: #bbb; }
+.dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 80px; background: #fff; border: 1px solid #ddd; border-radius: 10px; z-index: 50; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.1); max-height: 280px; overflow-y: auto; }
+.dd-item { padding: 10px 14px; font-size: 14px; cursor: pointer; color: #1a1a1a; border-bottom: 1px solid #f0f0f0; transition: background 0.1s; }
+.dd-item:last-of-type { border-bottom: none; }
+.dd-item:hover, .dd-item.sel { background: #f5f5f5; }
+.dd-item.first { background: #e8f8f2; }
+.dd-item.first:hover { background: #d4f0e6; }
+.dd-item .hl { color: #1D9E75; font-weight: 600; }
+.answers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 1rem; }
+.slot { border-radius: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center; min-height: 54px; padding: 8px 10px; border: 1.5px solid #e8e8e8; background: #fafafa; color: #bbb; }
+.slot .num { font-size: 11px; display: block; font-weight: 400; margin-bottom: 2px; opacity: 0.5; }
+.slot.found { background: #1D9E75; border-color: #1D9E75; color: #fff; animation: pop 0.4s ease; }
+.slot.found .num { opacity: 0.75; }
+.slot.missed { background: #e05a30; border-color: #e05a30; color: #fff; }
+.slot.missed .num { opacity: 0.75; }
+@keyframes pop { 0%{transform:scale(0.88);opacity:0.4} 60%{transform:scale(1.06)} 100%{transform:scale(1);opacity:1} }
+.plus-anim { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 700; color: #1D9E75; pointer-events: none; opacity: 0; z-index: 100; }
+.plus-anim.go { animation: floatup 1s ease forwards; }
+@keyframes floatup { 0%{opacity:1;transform:translateX(-50%) translateY(0)} 100%{opacity:0;transform:translateX(-50%) translateY(-30px)} }
+.flash { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 9px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 200; background: #e8f8f2; color: #0a5c3a; border: 1px solid #a8ddc5; white-space: nowrap; }
+.flash.on { opacity: 1; }
+.flash.err { background: #fdf0ec; color: #7a2a10; border-color: #f0b09a; }
+.btn { width: 100%; padding: 11px; background: #fff; border: 1.5px solid #ddd; border-radius: 10px; color: #333; font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 8px; transition: all 0.15s; }
+.btn:hover { background: #f5f5f5; }
+.btn.primary { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+.btn.primary:hover { background: #178a65; }
+.result-card { text-align: center; padding: 2rem 1rem; background: #fff; border-radius: 14px; border: 1px solid #e8e8e8; }
+.result-emoji { font-size: 52px; margin-bottom: 0.8rem; }
+.result-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; color: #1a1a1a; }
+.result-sub { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+.share-box { background: #f5f4f0; border-radius: 10px; padding: 1rem; font-family: 'Courier New', monospace; font-size: 13px; white-space: pre-wrap; text-align: left; margin-bottom: 1rem; color: #333; border: 1px solid #e8e8e8; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <h1>⚽ Lista Futbolera</h1>
+    <div class="sub" id="date-label"></div>
+  </div>
+  <div id="screen-game">
+    <div class="question-card">
+      <div class="question-text" id="q-text"></div>
+      <div class="question-meta" id="q-meta"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Encertades</div><div class="stat-value" id="s-found">0</div></div>
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="s-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Temps</div><div class="stat-value" id="s-time">1:40</div></div>
+    </div>
+    <div class="timer-bar-wrap"><div class="timer-bar" id="tbar"></div></div>
+    <div class="input-wrap">
+      <div class="input-row">
+        <input type="text" id="inp" placeholder="Escriu aquí..." autocomplete="off" autocorrect="off" spellcheck="false" />
+        <button onclick="endGame()">Acabar</button>
+      </div>
+      <div class="dropdown hidden" id="dd"></div>
+    </div>
+    <div class="answers-grid" id="grid"></div>
+  </div>
+  <div id="screen-result" class="hidden">
+    <div class="result-card">
+      <div class="result-emoji" id="r-emoji"></div>
+      <div class="result-title" id="r-title"></div>
+      <div class="result-sub" id="r-sub"></div>
+      <div class="share-box" id="r-share"></div>
+      <button class="btn primary" onclick="copyShare()">📋 Copiar resultat</button>
+      <button class="btn" onclick="nextQ()">Següent llista →</button>
+    </div>
+  </div>
+</div>
+<div class="flash" id="flash"></div>
+<div class="plus-anim" id="plus">+5s</div>
+<script>
+const DB_PLAYERS=["Kylian Mbappé","Erling Haaland","Vinicius Jr","Jude Bellingham","Pedri","Gavi","Lamine Yamal","Raphinha","Robert Lewandowski","Ferran Torres","Dani Olmo","Ansu Fati","Pau Cubarsí","Eric García","Alejandro Balde","Ronald Araújo","Frenkie de Jong","Marc Casadó","Iñaki Peña","Ter Stegen","Jules Koundé","Sergi Roberto","Wojciech Szczęsny","Vitor Roque","Rodri","Bernardo Silva","Kevin De Bruyne","Phil Foden","Rúben Dias","Ederson","Jack Grealish","Ilkay Gündogan","Mohamed Salah","Virgil van Dijk","Trent Alexander-Arnold","Darwin Núñez","Alisson","Luis Díaz","Diogo Jota","Bukayo Saka","Martin Ødegaard","Declan Rice","Gabriel Martinelli","David Raya","Leandro Trossard","Thomas Partey","Harry Kane","Jamal Musiala","Leroy Sané","Manuel Neuer","Thomas Müller","Joshua Kimmich","Serge Gnabry","Kingsley Coman","Antoine Griezmann","Ousmane Dembélé","João Félix","Jan Oblak","Marcos Llorente","Álvaro Morata","Ángel Correa","Karim Benzema","Luka Modric","Toni Kroos","Dani Carvajal","Éder Militão","Aurélien Tchouaméni","Federico Valverde","Nacho Fernández","Lucas Vázquez","Andriy Lunin","Rodrygo","Endrick","Lionel Messi","Sergio Busquets","Jordi Alba","Luis Suárez","Sergio Agüero","Neymar","Marquinhos","Achraf Hakimi","Marco Verratti","Gianluigi Donnarumma","Presnel Kimpembe","Vitinha","Marcus Rashford","Bruno Fernandes","Casemiro","Lisandro Martínez","Rasmus Højlund","Luke Shaw","Scott McTominay","Cole Palmer","Reece James","Enzo Fernández","Moisés Caicedo","Nicolas Jackson","Marc Cucurella","Levi Colwill","Heung-min Son","Richarlison","Cristian Romero","Pedro Porro","Micky van de Ven","James Maddison","Romelu Lukaku","Lautaro Martínez","Nicolò Barella","Federico Dimarco","Yann Sommer","Davide Frattesi","Hakan Çalhanoğlu","Rafael Leão","Theo Hernández","Mike Maignan","Tijjani Reijnders","Christian Pulisic","Ruben Loftus-Cheek","Dusan Vlahović","Federico Chiesa","Gleison Bremer","Weston McKennie","Kenan Yıldız","Victor Osimhen","Khvicha Kvaratskhelia","Giovanni Di Lorenzo","Stanislav Lobotka","André-Frank Zambo Anguissa","Paulo Dybala","Lorenzo Pellegrini","Mile Svilar","Leandro Paredes","Aleix García","Oriol Romeu","Yangel Herrera","Bryan Gil","Borja Iglesias","Mikel Oyarzabal","Unai Simón","Pau Torres","Aymeric Laporte","Joselu","Dani Vivian","Alex Baena","Fabián Ruiz","Alexia Putellas","Aitana Bonmatí","Caroline Graham Hansen","Fridolina Rolfö","Patri Guijarro","Salma Paralluelo","Florian Wirtz","Granit Xhaka","Jonathan Tah","Edmond Tapsoba","Marcus Thuram","Randal Kolo Muani","William Saliba","Dayot Upamecano","Adrien Rabiot","Rúben Neves","João Cancelo","Gonçalo Ramos","Diogo Costa","Nuno Mendes","Cody Gakpo","Xavi Simons","Memphis Depay","Denzel Dumfries","Stefan de Vrij","Savinho","Estêvão","Diego Maradona","Pelé","Johan Cruyff","Zinedine Zidane","Ronaldo","Ronaldinho","Rivaldo","Roberto Baggio","George Best","Bobby Charlton","Denis Law","Eusébio","Lev Yashin","Franz Beckenbauer","Gerd Müller","Karl-Heinz Rummenigge","Lothar Matthäus","Uwe Seeler","Marco van Basten","Ruud Gullit","Frank Rijkaard","Dennis Bergkamp","Patrick Kluivert","Marc Overmars","Clarence Seedorf","Michel Platini","Thierry Henry","Patrick Vieira","David Trezeguet","Youri Djorkaeff","Alfredo Di Stéfano","Ferenc Puskás","Paco Gento","Raúl","Iker Casillas","Sergio Ramos","Xavi Hernández","Andrés Iniesta","David Villa","Fernando Torres","Carles Puyol","Gerard Piqué","Víctor Valdés","Dani Alves","Eric Abidal","Samuel Eto'o","Hristo Stoichkov","László Kubala","Pavel Nedved","Alessandro Del Piero","Gianluigi Buffon","Fabio Cannavaro","Francesco Totti","Andrea Pirlo","Alessandro Nesta","Christian Vieri","Gianni Rivera","Paolo Maldini","Zvonimir Boban","Zlatan Ibrahimović","Henrik Larsson","Freddie Ljungberg","Steven Gerrard","Frank Lampard","John Terry","Rio Ferdinand","Wayne Rooney","Paul Scholes","Ryan Giggs","Peter Schmeichel","Eric Cantona","Roy Keane","David Beckham","Gary Lineker","Michael Owen","Alan Shearer","Robbie Fowler","Sol Campbell","Ronaldo Nazário","Cafu","Roberto Carlos","Romário","Bebeto","Adriano","Kaká","Júlio César","Lúcio","Gabriel Batistuta","Javier Zanetti","Pablo Aimar","Hernán Crespo","Carlos Tevez","Ángel Di María","Gonzalo Higuaín","Javier Mascherano","Rodrigo De Paul","Andriy Shevchenko","Ruud van Nistelrooy","George Weah","Oliver Kahn","Jens Lehmann","Michael Ballack","Miroslav Klose","Lukas Podolski","Mario Götze","Mesut Özil","Sami Khedira","Mats Hummels","Didier Drogba","Michael Essien","Yaya Touré","Salomon Kalou","Eden Hazard","Jan Vertonghen","Toby Alderweireld","Thibaut Courtois","Keylor Navas","Bryan Ruiz","Shinji Kagawa","Keisuke Honda","Park Ji-sung","Lilian Thuram","Laurent Blanc","Marcel Desailly","Emmanuel Petit","Peter Čech","Claude Makélélé","Cesc Fàbregas","Ashley Cole","Robert Pires","Bastian Schweinsteiger","Philipp Lahm","Arjen Robben","Franck Ribéry","Xabi Alonso","Dibu Martínez","Igor Belanov","Allan Simonsen","Jean-Pierre Papin","Oleg Blokhin","Stanley Matthews","Raymond Kopa","Omar Sívori","Dragan Džajić","Zbigniew Boniek","Sadio Mané","N'Golo Kanté","Riyad Mahrez","Jamie Vardy","Kasper Schmeichel","Wes Morgan","Vincent Kompany","David Silva","Fernandinho","Pablo Zabaleta","Hugo Lloris","Samuel Umtiti","Blaise Matuidi","Paul Pogba"];
+const DB_TEAMS=["FC Barcelona","Real Madrid","Atlético de Madrid","Sevilla","Valencia","Athletic Club","Real Sociedad","Villarreal","Real Betis","Osasuna","Girona","Las Palmas","Alavés","Rayo Vallecano","Getafe","Celta de Vigo","Mallorca","Leganés","Espanyol","Valladolid","Deportivo de La Coruña","Zaragoza","Manchester City","Manchester United","Liverpool","Arsenal","Chelsea","Tottenham Hotspur","Newcastle United","Aston Villa","West Ham United","Brighton","Everton","Crystal Palace","Wolverhampton","Fulham","Brentford","Leicester City","Southampton","Ipswich","Bournemouth","Nottingham Forest","Stoke City","Sunderland","Swansea City","Norwich City","Watford","West Bromwich Albion","Blackburn Rovers","Leeds United","Bolton Wanderers","Middlesbrough","Bayern Munich","Borussia Dortmund","Bayer Leverkusen","RB Leipzig","Eintracht Frankfurt","Wolfsburg","Freiburg","Hoffenheim","Stuttgart","Borussia Mönchengladbach","Werder Bremen","Hamburgo","Schalke 04","Hertha Berlin","Mainz","Augsburg","Union Berlin","Paris Saint-Germain","Olympique de Marseille","Olympique Lyonnais","Monaco","Lens","Lille","Nice","Rennes","Nantes","Saint-Étienne","Bordeaux","Strasbourg","Montpellier","Reims","Juventus","Inter Milan","AC Milan","Napoli","AS Roma","Lazio","Atalanta","Fiorentina","Torino","Sampdoria","Parma","Bologna","Udinese","Cagliari","Genoa","Hellas Verona","Ajax","PSV Eindhoven","Feyenoord","AZ Alkmaar","Benfica","Porto","Sporting de Lisboa","Braga","Celtic","Rangers","Hearts","Aberdeen","Red Bull Salzburg","Rapid Wien","Sturm Graz","Anderlecht","Club Brugge","Standard de Lieja","Gent","Galatasaray","Fenerbahçe","Beşiktaş","Trabzonspor","Dinamo Zagreb","Hajduk Split","Red Star Belgrade","Estrella Roja","Partizan","Shakhtar Donetsk","Dynamo Kyiv","Steaua Bucarest","Legia Warszawa","Slavia Praga","Sparta Praga","Marsella","Espanya","Alemanya","França","Brasil","Argentina","Portugal","Itàlia","Anglaterra","Bèlgica","Països Baixos","Croàcia","Uruguai","Mèxic","Estats Units","Japó","Corea del Sud","Senegal","Marroc","Ghana","Nigeria","Camerun","Costa d'Ivori","Algèria","Tunísia","Dinamarca","Suècia","Noruega","Suïssa","Àustria","Polònia","República Txeca","Hongria","Escòcia","Gal·les","Irlanda","Sèrbia","Ucraïna","Rússia","Turquia","Grècia","Romania","Bulgària","Costa Rica","Colòmbia","Xile","Perú","Equador","Paraguai"];
+
+const LISTS=[{q:"Jugadors del Barça golejadors a Copa del Rey 24/25",meta:"Tots els jugadors del FC Barcelona que han marcat a Copa del Rey aquesta temporada",type:"player",answers:[{display:"Raphinha",aliases:["rapha"]},{display:"Robert Lewandowski",aliases:["lewandowski","lewy","lewan"]},{display:"Ferran Torres",aliases:["ferran"]},{display:"Pedri",aliases:["pedro gonzalez"]},{display:"Gavi",aliases:["pablo gavi","pablo martin"]},{display:"Lamine Yamal",aliases:["lamine","yamal"]},{display:"Dani Olmo",aliases:["olmo"]},{display:"Pau Cubarsí",aliases:["cubarsi"]},{display:"Eric García",aliases:["eric garcia"]},{display:"Ansu Fati",aliases:["ansu"]}]},{q:"Equips de la Premier League temporada 2015/16",meta:"Els 20 clubs que van jugar la Premier League aquella temporada",type:"team",answers:[{display:"Arsenal",aliases:["gunners"]},{display:"Aston Villa",aliases:["villa"]},{display:"Bournemouth",aliases:[]},{display:"Chelsea",aliases:["cfc"]},{display:"Crystal Palace",aliases:["palace"]},{display:"Everton",aliases:["toffees"]},{display:"Leicester City",aliases:["leicester","foxes"]},{display:"Liverpool",aliases:["lfc"]},{display:"Manchester City",aliases:["man city","city","mcfc"]},{display:"Manchester United",aliases:["man united","man utd","united","mufc"]},{display:"Newcastle United",aliases:["newcastle","magpies"]},{display:"Norwich City",aliases:["norwich","canaries"]},{display:"Southampton",aliases:["saints"]},{display:"Stoke City",aliases:["stoke"]},{display:"Sunderland",aliases:["black cats"]},{display:"Swansea City",aliases:["swansea","swans"]},{display:"Tottenham Hotspur",aliases:["tottenham","spurs"]},{display:"Watford",aliases:["hornets"]},{display:"West Bromwich Albion",aliases:["west brom","baggies","wba"]},{display:"West Ham United",aliases:["west ham","hammers"]}]},{q:"Equips guanyadors de la Champions League",meta:"Tots els clubs que han aixecat la Champions League almenys una vegada",type:"team",answers:[{display:"Real Madrid",aliases:["madrid"]},{display:"AC Milan",aliases:["milan"]},{display:"Bayern Munich",aliases:["bayern"]},{display:"Barcelona",aliases:["barça","barca","fc barcelona"]},{display:"Liverpool",aliases:["lfc"]},{display:"Ajax",aliases:[]},{display:"Benfica",aliases:[]},{display:"Inter Milan",aliases:["inter","internazionale"]},{display:"Juventus",aliases:["juve"]},{display:"Nottingham Forest",aliases:["nottingham","forest"]},{display:"PSV Eindhoven",aliases:["psv"]},{display:"Porto",aliases:[]},{display:"Steaua Bucarest",aliases:["steaua"]},{display:"Estrella Roja",aliases:["red star"]},{display:"Marsella",aliases:["marseille","om"]},{display:"Borussia Dortmund",aliases:["dortmund","bvb"]},{display:"Feyenoord",aliases:[]},{display:"Hamburgo",aliases:["hsv"]},{display:"Aston Villa",aliases:["villa"]},{display:"Chelsea",aliases:[]},{display:"Manchester United",aliases:["man utd","united"]},{display:"Celtic",aliases:[]}]},{q:"11 titular del Barça vs Real Madrid (Champions 2009, Semifinal ida)",meta:"L'onze del Barça al Bernabéu, 27 d'abril de 2009",type:"player",answers:[{display:"Víctor Valdés",aliases:["valdes"]},{display:"Dani Alves",aliases:["alves"]},{display:"Carles Puyol",aliases:["puyol"]},{display:"Gerard Piqué",aliases:["pique"]},{display:"Eric Abidal",aliases:["abidal"]},{display:"Sergio Busquets",aliases:["busquets","busi"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Thierry Henry",aliases:["henry"]},{display:"Samuel Eto'o",aliases:["etoo","eto"]}]},{q:"Seleccions campiones del Món",meta:"Tots els països que han guanyat la Copa del Món almenys una vegada",type:"team",answers:[{display:"Brasil",aliases:["brazil"]},{display:"Alemanya",aliases:["germany","alemania"]},{display:"Itàlia",aliases:["italia","italy"]},{display:"Argentina",aliases:[]},{display:"França",aliases:["france","francia"]},{display:"Anglaterra",aliases:["england","inglaterra"]},{display:"Espanya",aliases:["españa","spain"]},{display:"Uruguai",aliases:["uruguay"]}]},{q:"Jugadors que han portat la dorsal 10 del Barça",meta:"Tots els futbolistes que han lluït officialment el número 10 al FC Barcelona",type:"player",answers:[{display:"László Kubala",aliases:["kubala"]},{display:"Johan Cruyff",aliases:["cruyff"]},{display:"Diego Maradona",aliases:["maradona"]},{display:"Hristo Stoichkov",aliases:["stoichkov"]},{display:"Rivaldo",aliases:[]},{display:"Ronaldinho",aliases:["dinho"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Ansu Fati",aliases:["ansu"]},{display:"Dani Olmo",aliases:["olmo"]}]}];
+
+const BASE_TIME=100,BONUS=5;
+let list,found,tmr,timeLeft,maxTime,active,ddItems=[],ddIdx=-1;
+let idx=Math.floor(Date.now()/86400000)%LISTS.length;
+function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').trim();}
+const DB_PLAYERS_NORM=DB_PLAYERS.map(norm);
+const DB_TEAMS_NORM=DB_TEAMS.map(norm);
+function allVariants(ans){const v=[norm(ans.display),...ans.aliases.map(norm)];const p=norm(ans.display).split(' ');if(p.length>1){v.push(p[0]);v.push(p[p.length-1]);}return[...new Set(v)];}
+function isListMatch(input,ans){return allVariants(ans).some(v=>v===norm(input));}
+function searchDB(input){if(!input||input.length<2)return[];const n=norm(input);const db=list.type==='player'?DB_PLAYERS:DB_TEAMS;const dbN=list.type==='player'?DB_PLAYERS_NORM:DB_TEAMS_NORM;const s=[],c=[];db.forEach((name,i)=>{if(dbN[i].startsWith(n))s.push(name);else if(dbN[i].includes(n))c.push(name);});return[...s,...c].slice(0,8);}
+function hl(text,query){const nt=norm(text),n=norm(query);const pos=nt.indexOf(n);if(pos<0)return text;return text.slice(0,pos)+'<span class="hl">'+text.slice(pos,pos+query.length)+'</span>'+text.slice(pos+query.length);}
+function renderDD(val){const dd=document.getElementById('dd');if(!val||val.length<2){dd.classList.add('hidden');ddItems=[];ddIdx=-1;return;}const res=searchDB(val);if(!res.length){dd.classList.add('hidden');ddItems=[];ddIdx=-1;return;}ddItems=res.map(n=>({name:n}));dd.innerHTML='';res.forEach((name,si)=>{const div=document.createElement('div');div.className='dd-item'+(si===0?' first':'');div.innerHTML=hl(name,val);div.addEventListener('mousedown',e=>{e.preventDefault();pickItem(si);});dd.appendChild(div);});ddIdx=-1;dd.classList.remove('hidden');}
+function updateSel(){const items=document.querySelectorAll('.dd-item');items.forEach((el,i)=>{el.classList.remove('first','sel');if(ddIdx===-1){if(i===0)el.classList.add('first');}else{if(i===ddIdx)el.classList.add('sel');}});}
+function hideDD(){document.getElementById('dd').classList.add('hidden');ddItems=[];ddIdx=-1;}
+function pickItem(si){const item=ddItems[si];if(!item)return;doSubmit(item.name);}
+function doSubmit(val){if(!active)return;const v=(val!==undefined?val:document.getElementById('inp').value).trim();if(!v)return;let hit=-1;list.answers.forEach((ans,i)=>{if(!found[i]&&isListMatch(v,ans))hit=i;});if(hit>=0){found[hit]=true;timeLeft+=BONUS;maxTime=Math.max(maxTime,timeLeft);const slot=document.getElementById('slot'+hit);slot.className='slot found';slot.innerHTML='<div><span class="num">'+(hit+1)+'</span>'+list.answers[hit].display+'</div>';document.getElementById('s-found').textContent=found.filter(Boolean).length;updateTimer();updateBar();animPlus();if(found.every(Boolean))endGame();}else{flash('"'+v+'" no és a la llista',true);}document.getElementById('inp').value='';hideDD();document.getElementById('inp').focus();}
+function initGame(){list=LISTS[idx%LISTS.length];found=new Array(list.answers.length).fill(false);timeLeft=BASE_TIME;maxTime=BASE_TIME;active=true;document.getElementById('q-text').textContent=list.q;document.getElementById('q-meta').textContent=list.meta;document.getElementById('s-total').textContent=list.answers.length;document.getElementById('s-found').textContent=0;document.getElementById('inp').value='';document.getElementById('inp').placeholder=list.type==='player'?'Escriu un jugador...':'Escriu un equip o selecció...';hideDD();document.getElementById('screen-game').classList.remove('hidden');document.getElementById('screen-result').classList.add('hidden');renderGrid();updateTimer();updateBar();clearInterval(tmr);tmr=setInterval(tick,1000);document.getElementById('inp').focus();}
+function renderGrid(){const g=document.getElementById('grid');g.innerHTML='';list.answers.forEach((ans,i)=>{const d=document.createElement('div');d.className='slot'+(found[i]?' found':'');d.id='slot'+i;d.innerHTML=found[i]?'<div><span class="num">'+(i+1)+'</span>'+ans.display+'</div>':'<div><span class="num">'+(i+1)+'</span>?</div>';g.appendChild(d);});}
+function tick(){if(!active)return;timeLeft=Math.max(0,timeLeft-1);updateTimer();updateBar();if(timeLeft<=0)endGame();}
+function updateTimer(){const m=Math.floor(timeLeft/60),s=timeLeft%60;document.getElementById('s-time').textContent=m+':'+String(s).padStart(2,'0');}
+function updateBar(){const pct=Math.max(0,timeLeft/maxTime*100);const b=document.getElementById('tbar');b.style.width=pct+'%';b.style.background=pct>50?'#1D9E75':pct>25?'#f0a500':'#e05a30';}
+function animPlus(){const el=document.getElementById('plus');el.className='plus-anim';void el.offsetWidth;el.className='plus-anim go';}
+function flash(msg,err){const el=document.getElementById('flash');el.textContent=msg;el.className='flash on'+(err?' err':'');clearTimeout(el._t);el._t=setTimeout(()=>el.className='flash',1600);}
+function endGame(){active=false;clearInterval(tmr);hideDD();list.answers.forEach((ans,i)=>{if(!found[i]){const s=document.getElementById('slot'+i);s.className='slot missed';s.innerHTML='<div><span class="num">'+(i+1)+'</span>'+ans.display+'</div>';}});setTimeout(showResult,700);}
+function showResult(){const total=list.answers.length,got=found.filter(Boolean).length,pct=got/total;const emojis=['😅','😅','👊','⚽','⚽','🏆'];const titles=['Cal estudiar més','Cal estudiar més','Passable','Bé!','Molt bé!','Llista perfecta!'];const ei=Math.min(5,Math.floor(pct*6));const squares=found.map(f=>f?'🟩':'🟥').join('');const d=new Date();const share='⚽ Lista Futbolera '+d.toLocaleDateString('ca-ES')+'\n'+got+'/'+total+'\n'+squares;document.getElementById('r-emoji').textContent=emojis[ei];document.getElementById('r-title').textContent=titles[ei];document.getElementById('r-sub').textContent=got+' de '+total+' respostes · +'+got*BONUS+'s de bonus';document.getElementById('r-share').textContent=share;document.getElementById('screen-game').classList.add('hidden');document.getElementById('screen-result').classList.remove('hidden');}
+function copyShare(){navigator.clipboard.writeText(document.getElementById('r-share').textContent).then(()=>flash('Copiat!',false));}
+function nextQ(){idx++;initGame();}
+const inp=document.getElementById('inp');
+inp.addEventListener('input',e=>renderDD(e.target.value));
+inp.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();if(ddItems.length){ddIdx=Math.min(ddIdx+1,ddItems.length-1);updateSel();}}else if(e.key==='ArrowUp'){e.preventDefault();if(ddItems.length){ddIdx=Math.max(ddIdx-1,-1);updateSel();}}else if(e.key==='Enter'){e.preventDefault();if(ddItems.length>0&&ddIdx===-1)pickItem(0);else if(ddItems.length>0&&ddIdx>=0)pickItem(ddIdx);else doSubmit(inp.value.trim());}else if(e.key==='Escape')hideDD();});
+document.addEventListener('click',e=>{if(!e.target.closest('.input-wrap'))hideDD();});
+const days=['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
+const months=['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
+const now=new Date();
+document.getElementById('date-label').textContent=days[now.getDay()]+', '+now.getDate()+' de '+months[now.getMonth()]+' · Llista #'+((Math.floor(Date.now()/86400000)%LISTS.length)+1);
+initGame();
+</script>
+</body>
+</html>
