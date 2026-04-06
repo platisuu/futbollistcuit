@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Futbol List-a</title>
+<style>
+:root{--bg:#1a1a2e;--bg2:#16213e;--card:#1e2a45;--card2:#243352;--green:#4ecca3;--green2:#3db891;--red:#e94560;--text:#eaeaea;--text2:#a0aec0;--border:rgba(255,255,255,0.08);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);min-height:100vh;}
+.top-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0.75rem 1rem;display:flex;align-items:center;justify-content:center;position:relative;}
+.top-bar h1{font-size:20px;font-weight:700;letter-spacing:1px;color:var(--green);text-transform:uppercase;}
+.day-badge{position:absolute;right:1rem;font-size:12px;color:var(--text2);background:var(--card);padding:4px 10px;border-radius:20px;border:1px solid var(--border);}
+.admin-btn{position:absolute;left:1rem;font-size:12px;color:var(--text2);background:var(--card);padding:4px 10px;border-radius:20px;border:1px solid var(--border);cursor:pointer;text-decoration:none;}
+.admin-btn:hover{color:var(--green);border-color:var(--green);}
+#app{max-width:640px;margin:0 auto;padding:1.25rem 1rem;}
+.question-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;border-left:4px solid var(--green);}
+.question-text{font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.4;}
+.question-meta{font-size:12px;color:var(--text2);}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:0.8rem;text-align:center;}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.stat-value{font-size:24px;font-weight:800;color:var(--green);}
+.stat-value.timer{color:var(--text);}
+.stat-value.timer.warning{color:#f6ad55;}
+.stat-value.timer.danger{color:var(--red);}
+.timer-bar-wrap{height:6px;background:var(--card2);border-radius:3px;margin-bottom:1rem;overflow:hidden;}
+.timer-bar{height:100%;background:var(--green);border-radius:3px;transition:width 0.5s linear,background 0.5s;}
+.input-wrap{position:relative;margin-bottom:1rem;}
+.input-row{display:flex;gap:8px;}
+.input-row input{flex:1;font-size:15px;padding:11px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);outline:none;transition:border-color 0.15s;}
+.input-row input::placeholder{color:var(--text2);}
+.input-row input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(78,204,163,0.15);}
+.input-row button{padding:11px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);color:var(--text2);cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s;white-space:nowrap;}
+.input-row button:hover{background:var(--card2);color:var(--text);}
+.dropdown{position:absolute;top:calc(100% + 5px);left:0;right:80px;background:var(--card2);border:1px solid var(--border);border-radius:12px;z-index:50;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);max-height:280px;overflow-y:auto;}
+.dd-item{padding:10px 16px;font-size:14px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);transition:background 0.1s;}
+.dd-item:last-of-type{border-bottom:none;}
+.dd-item:hover{background:rgba(255,255,255,0.05);}
+.dd-item.first{background:rgba(78,204,163,0.12);}
+.dd-item.first:hover{background:rgba(78,204,163,0.2);}
+.dd-item.sel{background:rgba(255,255,255,0.08);}
+.dd-item .hl{color:var(--green);font-weight:700;}
+.answers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;margin-bottom:1rem;}
+.slot{border-radius:12px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:58px;padding:10px 8px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);}
+.slot .num{font-size:10px;font-weight:500;margin-bottom:3px;opacity:0.5;}
+.slot.found{background:rgba(78,204,163,0.15);border-color:var(--green);color:var(--green);animation:pop 0.4s ease;}
+.slot.found .num{opacity:0.6;color:var(--green);}
+.slot.missed{background:rgba(233,69,96,0.15);border-color:var(--red);color:var(--red);}
+.slot.missed .num{opacity:0.6;color:var(--red);}
+@keyframes pop{0%{transform:scale(0.85);opacity:0.3}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.plus-anim{position:fixed;top:70px;left:50%;transform:translateX(-50%);font-size:20px;font-weight:800;color:var(--green);pointer-events:none;opacity:0;z-index:100;}
+.plus-anim.go{animation:floatup 1s ease forwards;}
+@keyframes floatup{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-32px)}}
+.flash{position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:10px 22px;border-radius:25px;font-size:14px;font-weight:600;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:200;white-space:nowrap;}
+.flash.on{opacity:1;}
+.flash.ok{background:rgba(78,204,163,0.2);color:var(--green);border:1px solid var(--green);}
+.flash.err{background:rgba(233,69,96,0.2);color:var(--red);border:1px solid var(--red);}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem 1.5rem;text-align:center;margin-top:1rem;}
+.result-emoji{font-size:56px;margin-bottom:1rem;}
+.result-title{font-size:26px;font-weight:800;margin-bottom:6px;}
+.result-score{font-size:48px;font-weight:900;color:var(--green);margin-bottom:4px;}
+.result-sub{font-size:14px;color:var(--text2);margin-bottom:1.5rem;}
+.share-box{background:var(--bg);border-radius:12px;padding:1rem 1.25rem;font-family:'Courier New',monospace;font-size:13px;white-space:pre-wrap;text-align:left;margin-bottom:1.25rem;color:var(--text2);border:1px solid var(--border);}
+.btn{width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;border:none;transition:all 0.15s;}
+.btn.primary{background:var(--green);color:#0f1a2e;}
+.btn.primary:hover{background:var(--green2);}
+.btn.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn.secondary:hover{background:rgba(255,255,255,0.08);}
+
+/* ADMIN */
+#screen-admin{display:none;}
+#screen-admin.active{display:block;}
+.admin-header{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;}
+.admin-header h2{font-size:20px;font-weight:700;color:var(--green);}
+.back-btn{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;}
+.back-btn:hover{color:var(--text);}
+.schedule-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem;}
+.schedule-day{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;}
+.schedule-day .day-title{font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.schedule-day select{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:14px;outline:none;cursor:pointer;}
+.schedule-day select:focus{border-color:var(--green);}
+.schedule-day .current-badge{display:inline-block;font-size:10px;background:rgba(78,204,163,0.2);color:var(--green);border:1px solid var(--green);padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle;}
+.save-btn{width:100%;padding:13px;background:var(--green);color:#0f1a2e;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
+.save-btn:hover{background:var(--green2);}
+.admin-info{font-size:12px;color:var(--text2);text-align:center;margin-top:0.75rem;}
+
+.hidden{display:none!important;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="admin-btn" onclick="openAdmin()">⚙ Programar</a>
+  <h1>⚽ Futbol List-a</h1>
+  <span class="day-badge" id="date-label"></span>
+</div>
+
+<div id="app">
+  <!-- JOC -->
+  <div id="screen-game">
+    <div class="question-card">
+      <div class="question-text" id="q-text"></div>
+      <div class="question-meta" id="q-meta"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Encertades</div><div class="stat-value" id="s-found">0</div></div>
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="s-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Temps</div><div class="stat-value timer" id="s-time">1:40</div></div>
+    </div>
+    <div class="timer-bar-wrap"><div class="timer-bar" id="tbar"></div></div>
+    <div class="input-wrap">
+      <div class="input-row">
+        <input type="text" id="inp" placeholder="Escriu aquí..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+        <button onclick="endGame()">Acabar</button>
+      </div>
+      <div class="dropdown hidden" id="dd"></div>
+    </div>
+    <div class="answers-grid" id="grid"></div>
+  </div>
+
+  <!-- RESULTAT -->
+  <div id="screen-result" class="hidden">
+    <div class="result-card">
+      <div class="result-emoji" id="r-emoji"></div>
+      <div class="result-title" id="r-title"></div>
+      <div class="result-score" id="r-score"></div>
+      <div class="result-sub" id="r-sub"></div>
+      <div class="share-box" id="r-share"></div>
+      <button class="btn primary" onclick="copyShare()">📋 Copiar resultat</button>
+      <button class="btn secondary" onclick="nextQ()">Següent llista →</button>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="screen-admin">
+    <div class="admin-header">
+      <button class="back-btn" onclick="closeAdmin()">← Tornar</button>
+      <h2>⚙ Programar llistes</h2>
+    </div>
+    <div class="schedule-grid" id="schedule-grid"></div>
+    <button class="save-btn" onclick="saveSchedule()">💾 Guardar programació</button>
+    <p class="admin-info">Els canvis es guarden al navegador. Tots els jugadors que accedeixin veuran la llista del seu dia.</p>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+<div class="plus-anim" id="plus">+5s</div>
+
+<script>
+// ===================== BASE DE DADES =====================
+const DB_PLAYERS=["Kylian Mbappé","Erling Haaland","Vinicius Jr","Jude Bellingham","Pedri","Gavi","Lamine Yamal","Raphinha","Robert Lewandowski","Ferran Torres","Dani Olmo","Ansu Fati","Pau Cubarsí","Eric García","Alejandro Balde","Ronald Araújo","Frenkie de Jong","Marc Casadó","Iñaki Peña","Ter Stegen","Jules Koundé","Sergi Roberto","Wojciech Szczęsny","Vitor Roque","Rodri","Bernardo Silva","Kevin De Bruyne","Phil Foden","Rúben Dias","Ederson","Jack Grealish","Ilkay Gündogan","Mohamed Salah","Virgil van Dijk","Trent Alexander-Arnold","Darwin Núñez","Alisson","Luis Díaz","Diogo Jota","Bukayo Saka","Martin Ødegaard","Declan Rice","Gabriel Martinelli","David Raya","Leandro Trossard","Thomas Partey","Harry Kane","Jamal Musiala","Leroy Sané","Manuel Neuer","Thomas Müller","Joshua Kimmich","Serge Gnabry","Kingsley Coman","Antoine Griezmann","Ousmane Dembélé","João Félix","Jan Oblak","Marcos Llorente","Álvaro Morata","Ángel Correa","Karim Benzema","Luka Modric","Toni Kroos","Dani Carvajal","Éder Militão","Aurélien Tchouaméni","Federico Valverde","Nacho Fernández","Lucas Vázquez","Andriy Lunin","Rodrygo","Endrick","Lionel Messi","Sergio Busquets","Jordi Alba","Luis Suárez","Sergio Agüero","Neymar","Marquinhos","Achraf Hakimi","Marco Verratti","Gianluigi Donnarumma","Presnel Kimpembe","Vitinha","Marcus Rashford","Bruno Fernandes","Casemiro","Lisandro Martínez","Rasmus Højlund","Luke Shaw","Cole Palmer","Reece James","Enzo Fernández","Moisés Caicedo","Nicolas Jackson","Marc Cucurella","Heung-min Son","Richarlison","Cristian Romero","Pedro Porro","Micky van de Ven","Romelu Lukaku","Lautaro Martínez","Nicolò Barella","Federico Dimarco","Yann Sommer","Davide Frattesi","Hakan Çalhanoğlu","Rafael Leão","Theo Hernández","Mike Maignan","Tijjani Reijnders","Christian Pulisic","Dusan Vlahović","Federico Chiesa","Gleison Bremer","Victor Osimhen","Khvicha Kvaratskhelia","Giovanni Di Lorenzo","Stanislav Lobotka","Paulo Dybala","Lorenzo Pellegrini","Mile Svilar","Aleix García","Mikel Oyarzabal","Unai Simón","Pau Torres","Aymeric Laporte","Joselu","Fabián Ruiz","Alexia Putellas","Aitana Bonmatí","Salma Paralluelo","Florian Wirtz","Granit Xhaka","Jonathan Tah","Marcus Thuram","William Saliba","Dayot Upamecano","Rúben Neves","João Cancelo","Gonçalo Ramos","Diogo Costa","Nuno Mendes","Cody Gakpo","Xavi Simons","Memphis Depay","Denzel Dumfries","Diego Maradona","Pelé","Johan Cruyff","Zinedine Zidane","Ronaldo","Ronaldinho","Rivaldo","Roberto Baggio","George Best","Bobby Charlton","Denis Law","Eusébio","Lev Yashin","Franz Beckenbauer","Gerd Müller","Karl-Heinz Rummenigge","Lothar Matthäus","Uwe Seeler","Marco van Basten","Ruud Gullit","Frank Rijkaard","Dennis Bergkamp","Patrick Kluivert","Marc Overmars","Clarence Seedorf","Michel Platini","Thierry Henry","Patrick Vieira","David Trezeguet","Alfredo Di Stéfano","Ferenc Puskás","Paco Gento","Raúl","Iker Casillas","Sergio Ramos","Xavi Hernández","Andrés Iniesta","David Villa","Fernando Torres","Carles Puyol","Gerard Piqué","Víctor Valdés","Dani Alves","Eric Abidal","Samuel Eto'o","Hristo Stoichkov","László Kubala","Pavel Nedved","Alessandro Del Piero","Gianluigi Buffon","Fabio Cannavaro","Francesco Totti","Andrea Pirlo","Alessandro Nesta","Paolo Maldini","Zvonimir Boban","Zlatan Ibrahimović","Henrik Larsson","Steven Gerrard","Frank Lampard","John Terry","Rio Ferdinand","Wayne Rooney","Paul Scholes","Ryan Giggs","Peter Schmeichel","Eric Cantona","Roy Keane","David Beckham","Gary Lineker","Michael Owen","Alan Shearer","Robbie Fowler","Ronaldo Nazário","Cafu","Roberto Carlos","Romário","Bebeto","Adriano","Kaká","Júlio César","Gabriel Batistuta","Javier Zanetti","Hernán Crespo","Carlos Tevez","Ángel Di María","Gonzalo Higuaín","Javier Mascherano","Rodrigo De Paul","Andriy Shevchenko","Ruud van Nistelrooy","George Weah","Oliver Kahn","Michael Ballack","Miroslav Klose","Lukas Podolski","Mario Götze","Mesut Özil","Mats Hummels","Didier Drogba","Yaya Touré","Eden Hazard","Thibaut Courtois","Keylor Navas","Shinji Kagawa","Keisuke Honda","Park Ji-sung","Lilian Thuram","Laurent Blanc","Marcel Desailly","Emmanuel Petit","Peter Čech","Claude Makélélé","Cesc Fàbregas","Ashley Cole","Robert Pires","Bastian Schweinsteiger","Philipp Lahm","Arjen Robben","Franck Ribéry","Xabi Alonso","Dibu Martínez","Sadio Mané","N'Golo Kanté","Riyad Mahrez","Jamie Vardy","Kasper Schmeichel","Wes Morgan","Vincent Kompany","David Silva","Fernandinho","Hugo Lloris","Paul Pogba","Samuel Umtiti","Blaise Matuidi"];
+const DB_TEAMS=["FC Barcelona","Real Madrid","Atlético de Madrid","Sevilla","Valencia","Athletic Club","Real Sociedad","Villarreal","Real Betis","Osasuna","Girona","Las Palmas","Alavés","Rayo Vallecano","Getafe","Celta de Vigo","Mallorca","Leganés","Espanyol","Valladolid","Deportivo de La Coruña","Zaragoza","Manchester City","Manchester United","Liverpool","Arsenal","Chelsea","Tottenham Hotspur","Newcastle United","Aston Villa","West Ham United","Brighton","Everton","Crystal Palace","Wolverhampton","Fulham","Brentford","Leicester City","Southampton","Ipswich","Bournemouth","Nottingham Forest","Stoke City","Sunderland","Swansea City","Norwich City","Watford","West Bromwich Albion","Blackburn Rovers","Leeds United","Bolton Wanderers","Bayern Munich","Borussia Dortmund","Bayer Leverkusen","RB Leipzig","Eintracht Frankfurt","Wolfsburg","Freiburg","Hoffenheim","Stuttgart","Borussia Mönchengladbach","Werder Bremen","Hamburgo","Schalke 04","Paris Saint-Germain","Olympique de Marseille","Olympique Lyonnais","Monaco","Lens","Lille","Nice","Rennes","Nantes","Saint-Étienne","Bordeaux","Juventus","Inter Milan","AC Milan","Napoli","AS Roma","Lazio","Atalanta","Fiorentina","Torino","Sampdoria","Parma","Bologna","Ajax","PSV Eindhoven","Feyenoord","AZ Alkmaar","Benfica","Porto","Sporting de Lisboa","Braga","Celtic","Rangers","Red Bull Salzburg","Galatasaray","Fenerbahçe","Beşiktaş","Estrella Roja","Shakhtar Donetsk","Dynamo Kyiv","Steaua Bucarest","Espanya","Alemanya","França","Brasil","Argentina","Portugal","Itàlia","Anglaterra","Bèlgica","Països Baixos","Croàcia","Uruguai","Mèxic","Estats Units","Japó","Corea del Sud","Senegal","Marroc","Ghana","Nigeria","Camerun","Costa d'Ivori","Dinamarca","Suècia","Noruega","Suïssa","Àustria","Polònia","República Txeca","Escòcia","Gal·les","Sèrbia","Ucraïna","Turquia","Grècia","Costa Rica","Colòmbia","Xile","Perú","Equador"];
+
+// ===================== 60 LLISTES =====================
+const ALL_LISTS = [
+  // 1
+  {q:"Jugadors del Barça golejadors a Copa del Rey 24/25",meta:"Jugadors del FC Barcelona que han marcat a Copa del Rey aquesta temporada",type:"player",answers:[{display:"Raphinha",aliases:["rapha"]},{display:"Robert Lewandowski",aliases:["lewandowski","lewy","lewan"]},{display:"Ferran Torres",aliases:["ferran"]},{display:"Pedri",aliases:["pedro gonzalez"]},{display:"Gavi",aliases:["pablo gavi"]},{display:"Lamine Yamal",aliases:["lamine","yamal"]},{display:"Dani Olmo",aliases:["olmo"]},{display:"Pau Cubarsí",aliases:["cubarsi"]},{display:"Eric García",aliases:["eric garcia"]},{display:"Ansu Fati",aliases:["ansu"]}]},
+  // 2
+  {q:"Equips de la Premier League 2015/16",meta:"Els 20 clubs que van jugar la Premier League aquella temporada",type:"team",answers:[{display:"Arsenal",aliases:["gunners"]},{display:"Aston Villa",aliases:["villa"]},{display:"Bournemouth",aliases:[]},{display:"Chelsea",aliases:[]},{display:"Crystal Palace",aliases:["palace"]},{display:"Everton",aliases:[]},{display:"Leicester City",aliases:["leicester","foxes"]},{display:"Liverpool",aliases:["lfc"]},{display:"Manchester City",aliases:["man city","city"]},{display:"Manchester United",aliases:["man united","man utd","united"]},{display:"Newcastle United",aliases:["newcastle"]},{display:"Norwich City",aliases:["norwich"]},{display:"Southampton",aliases:["saints"]},{display:"Stoke City",aliases:["stoke"]},{display:"Sunderland",aliases:[]},{display:"Swansea City",aliases:["swansea"]},{display:"Tottenham Hotspur",aliases:["tottenham","spurs"]},{display:"Watford",aliases:[]},{display:"West Bromwich Albion",aliases:["west brom","wba"]},{display:"West Ham United",aliases:["west ham","hammers"]}]},
+  // 3
+  {q:"Guanyadors de la Champions League",meta:"Tots els clubs que han aixecat la Champions almenys una vegada",type:"team",answers:[{display:"Real Madrid",aliases:["madrid"]},{display:"AC Milan",aliases:["milan"]},{display:"Bayern Munich",aliases:["bayern"]},{display:"Barcelona",aliases:["barça","barca"]},{display:"Liverpool",aliases:["lfc"]},{display:"Ajax",aliases:[]},{display:"Benfica",aliases:[]},{display:"Inter Milan",aliases:["inter"]},{display:"Juventus",aliases:["juve"]},{display:"Nottingham Forest",aliases:["nottingham","forest"]},{display:"PSV Eindhoven",aliases:["psv"]},{display:"Porto",aliases:[]},{display:"Steaua Bucarest",aliases:["steaua"]},{display:"Estrella Roja",aliases:["red star"]},{display:"Marsella",aliases:["marseille","om"]},{display:"Borussia Dortmund",aliases:["dortmund","bvb"]},{display:"Feyenoord",aliases:[]},{display:"Hamburgo",aliases:["hsv"]},{display:"Aston Villa",aliases:["villa"]},{display:"Chelsea",aliases:[]},{display:"Manchester United",aliases:["man utd","united"]},{display:"Celtic",aliases:[]}]},
+  // 4
+  {q:"11 titular Barça vs Madrid (Champions 2009, Semifinal)",meta:"L'onze del Barça al Bernabéu, 27 d'abril de 2009",type:"player",answers:[{display:"Víctor Valdés",aliases:["valdes"]},{display:"Dani Alves",aliases:["alves"]},{display:"Carles Puyol",aliases:["puyol"]},{display:"Gerard Piqué",aliases:["pique"]},{display:"Eric Abidal",aliases:["abidal"]},{display:"Sergio Busquets",aliases:["busquets","busi"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Thierry Henry",aliases:["henry"]},{display:"Samuel Eto'o",aliases:["etoo","eto"]}]},
+  // 5
+  {q:"Seleccions campiones del Món",meta:"Tots els països que han guanyat la Copa del Món",type:"team",answers:[{display:"Brasil",aliases:["brazil"]},{display:"Alemanya",aliases:["germany","alemania"]},{display:"Itàlia",aliases:["italia","italy"]},{display:"Argentina",aliases:[]},{display:"França",aliases:["france","francia"]},{display:"Anglaterra",aliases:["england","inglaterra"]},{display:"Espanya",aliases:["españa","spain"]},{display:"Uruguai",aliases:["uruguay"]}]},
+  // 6
+  {q:"Jugadors que han portat la dorsal 10 del Barça",meta:"Tots els futbolistes que han lluït el número 10 al FC Barcelona",type:"player",answers:[{display:"László Kubala",aliases:["kubala"]},{display:"Johan Cruyff",aliases:["cruyff"]},{display:"Diego Maradona",aliases:["maradona"]},{display:"Hristo Stoichkov",aliases:["stoichkov"]},{display:"Rivaldo",aliases:[]},{display:"Ronaldinho",aliases:["dinho"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Ansu Fati",aliases:["ansu"]},{display:"Dani Olmo",aliases:["olmo"]}]},
+  // 7
+  {q:"Màxims golejadors de la Champions League",meta:"Els 10 jugadors amb més gols a la Champions de tots els temps",type:"player",answers:[{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Robert Lewandowski",aliases:["lewandowski","lewy"]},{display:"Karim Benzema",aliases:["benzema"]},{display:"Raúl",aliases:["raul"]},{display:"Ruud van Nistelrooy",aliases:["van nistelrooy","nistelrooy"]},{display:"Thomas Müller",aliases:["muller","thomas muller"]},{display:"Andriy Shevchenko",aliases:["shevchenko","sheva"]},{display:"Zlatan Ibrahimović",aliases:["zlatan","ibrahimovic","ibra"]},{display:"Thierry Henry",aliases:["henry"]}]},
+  // 8
+  {q:"Guanyadors del Balón de Oro (2000–2024)",meta:"Tots els futbolistes premiats amb el Balón de Oro des de l'any 2000",type:"player",answers:[{display:"Zinedine Zidane",aliases:["zidane","zizou"]},{display:"Ronaldo",aliases:["ronaldo fenomeno","r9"]},{display:"Ronaldinho",aliases:["dinho"]},{display:"Fabio Cannavaro",aliases:["cannavaro"]},{display:"Kaká",aliases:["kaka"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Luka Modric",aliases:["modric"]},{display:"Alexia Putellas",aliases:["alexia"]},{display:"Karim Benzema",aliases:["benzema"]},{display:"Aitana Bonmatí",aliases:["aitana"]},{display:"Rodri",aliases:["rodrigo hernandez"]}]},
+  // 9
+  {q:"Equips de LaLiga temporada 2024/25",meta:"Els 20 clubs que juguen LaLiga aquesta temporada",type:"team",answers:[{display:"FC Barcelona",aliases:["barça","barca"]},{display:"Real Madrid",aliases:["madrid"]},{display:"Atlético de Madrid",aliases:["atletico","atleti"]},{display:"Athletic Club",aliases:["athletic","bilbao"]},{display:"Real Sociedad",aliases:["sociedad"]},{display:"Villarreal",aliases:[]},{display:"Real Betis",aliases:["betis"]},{display:"Girona",aliases:[]},{display:"Valencia",aliases:[]},{display:"Sevilla",aliases:[]},{display:"Rayo Vallecano",aliases:["rayo"]},{display:"Osasuna",aliases:[]},{display:"Getafe",aliases:[]},{display:"Celta de Vigo",aliases:["celta"]},{display:"Espanyol",aliases:[]},{display:"Las Palmas",aliases:[]},{display:"Leganés",aliases:["leganes"]},{display:"Alavés",aliases:["alaves"]},{display:"Mallorca",aliases:[]},{display:"Valladolid",aliases:[]}]},
+  // 10
+  {q:"Jugadors del Real Madrid campions de la Champions 2021/22",meta:"L'11 titular del Madrid a la final de París contra el Liverpool",type:"player",answers:[{display:"Thibaut Courtois",aliases:["courtois"]},{display:"Dani Carvajal",aliases:["carvajal"]},{display:"Éder Militão",aliases:["militao","eder militao"]},{display:"David Alaba",aliases:["alaba"]},{display:"Ferland Mendy",aliases:["mendy"]},{display:"Casemiro",aliases:[]},{display:"Luka Modric",aliases:["modric"]},{display:"Toni Kroos",aliases:["kroos"]},{display:"Federico Valverde",aliases:["valverde"]},{display:"Karim Benzema",aliases:["benzema"]},{display:"Vinicius Jr",aliases:["vini","vinicius"]}]},
+  // 11
+  {q:"Equips de la Bundesliga 2024/25",meta:"Els 18 clubs que juguen la Bundesliga aquesta temporada",type:"team",answers:[{display:"Bayern Munich",aliases:["bayern"]},{display:"Borussia Dortmund",aliases:["dortmund","bvb"]},{display:"Bayer Leverkusen",aliases:["leverkusen"]},{display:"RB Leipzig",aliases:["leipzig"]},{display:"Eintracht Frankfurt",aliases:["frankfurt"]},{display:"Stuttgart",aliases:[]},{display:"Wolfsburg",aliases:[]},{display:"Freiburg",aliases:[]},{display:"Borussia Mönchengladbach",aliases:["monchengladbach","gladbach"]},{display:"Hoffenheim",aliases:[]},{display:"Augsburg",aliases:[]},{display:"Werder Bremen",aliases:["werder","bremen"]},{display:"Mainz",aliases:[]},{display:"Union Berlin",aliases:["union"]},{display:"Hertha Berlin",aliases:["hertha"]},{display:"Heidenheim",aliases:[]},{display:"Holstein Kiel",aliases:["kiel"]},{display:"St. Pauli",aliases:["pauli"]}]},
+  // 12
+  {q:"Jugadors de la Selecció Espanyola a l'Eurocopa 2024",meta:"Els jugadors que van guanyar l'Eurocopa amb Espanya a Alemanya",type:"player",answers:[{display:"Unai Simón",aliases:["simon","unai simon"]},{display:"Dani Carvajal",aliases:["carvajal"]},{display:"Robin Le Normand",aliases:["le normand"]},{display:"Aymeric Laporte",aliases:["laporte"]},{display:"Marc Cucurella",aliases:["cucurella"]},{display:"Rodri",aliases:["rodrigo"]},{display:"Fabián Ruiz",aliases:["fabian"]},{display:"Pedri",aliases:[]},{display:"Lamine Yamal",aliases:["lamine","yamal"]},{display:"Álvaro Morata",aliases:["morata"]},{display:"Nico Williams",aliases:["nico"]}]},
+  // 13
+  {q:"Jugadors del Liverpool campions de la Champions 2018/19",meta:"L'onze del Liverpool a la final de Madrid contra el Tottenham",type:"player",answers:[{display:"Alisson",aliases:["alisson becker"]},{display:"Trent Alexander-Arnold",aliases:["trent","alexander arnold"]},{display:"Joel Matip",aliases:["matip"]},{display:"Virgil van Dijk",aliases:["van dijk"]},{display:"Andrew Robertson",aliases:["robertson"]},{display:"Jordan Henderson",aliases:["henderson"]},{display:"Georginio Wijnaldum",aliases:["wijnaldum"]},{display:"Fabinho",aliases:[]},{display:"Mohamed Salah",aliases:["salah","mo salah"]},{display:"Roberto Firmino",aliases:["firmino"]},{display:"Sadio Mané",aliases:["mane","sadio"]}]},
+  // 14
+  {q:"Equips de la Serie A 2024/25",meta:"Els 20 clubs que juguen la Serie A italiana aquesta temporada",type:"team",answers:[{display:"Inter Milan",aliases:["inter"]},{display:"AC Milan",aliases:["milan"]},{display:"Juventus",aliases:["juve"]},{display:"Napoli",aliases:[]},{display:"AS Roma",aliases:["roma"]},{display:"Lazio",aliases:[]},{display:"Atalanta",aliases:[]},{display:"Fiorentina",aliases:[]},{display:"Torino",aliases:[]},{display:"Bologna",aliases:[]},{display:"Udinese",aliases:[]},{display:"Cagliari",aliases:[]},{display:"Genoa",aliases:[]},{display:"Hellas Verona",aliases:["verona"]},{display:"Como",aliases:[]},{display:"Empoli",aliases:[]},{display:"Parma",aliases:[]},{display:"Lecce",aliases:[]},{display:"Venezia",aliases:[]},{display:"Monza",aliases:[]}]},
+  // 15
+  {q:"Jugadors que han guanyat el Mundial i la Champions",meta:"Futbolistes que han guanyat tant la Copa del Món com la Champions League",type:"player",answers:[{display:"Zinedine Zidane",aliases:["zidane"]},{display:"Didier Deschamps",aliases:["deschamps"]},{display:"Marcel Desailly",aliases:["desailly"]},{display:"Lilian Thuram",aliases:["thuram"]},{display:"Clarence Seedorf",aliases:["seedorf"]},{display:"Paulo Sousa",aliases:["sousa"]},{display:"Roberto Carlos",aliases:["roberto carlos"]},{display:"Cafu",aliases:[]},{display:"Ronaldo",aliases:["r9","ronaldo fenomeno"]},{display:"Rivaldo",aliases:[]},{display:"Iker Casillas",aliases:["casillas"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"David Villa",aliases:["villa"]},{display:"Sergio Ramos",aliases:["ramos"]}]},
+  // 16
+  {q:"Equips de Ligue 1 2024/25",meta:"Els clubs que juguen la Ligue 1 francesa aquesta temporada",type:"team",answers:[{display:"Paris Saint-Germain",aliases:["psg","paris"]},{display:"Olympique de Marseille",aliases:["marseille","om"]},{display:"Olympique Lyonnais",aliases:["lyon","ol"]},{display:"Monaco",aliases:["as monaco"]},{display:"Lille",aliases:["losc"]},{display:"Nice",aliases:[]},{display:"Lens",aliases:["rc lens"]},{display:"Rennes",aliases:[]},{display:"Strasbourg",aliases:[]},{display:"Montpellier",aliases:[]},{display:"Nantes",aliases:[]},{display:"Reims",aliases:[]},{display:"Brest",aliases:[]},{display:"Toulouse",aliases:[]},{display:"Le Havre",aliases:[]},{display:"Saint-Étienne",aliases:["saint etienne"]},{display:"Auxerre",aliases:[]},{display:"Angers",aliases:[]}]},
+  // 17
+  {q:"Golejadors del Mundial 2022 (Qatar)",meta:"Els jugadors que van marcar gols al Mundial de Qatar 2022",type:"player",answers:[{display:"Kylian Mbappé",aliases:["mbappe","kylian"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Olivier Giroud",aliases:["giroud"]},{display:"Marcus Rashford",aliases:["rashford"]},{display:"Cody Gakpo",aliases:["gakpo"]},{display:"Richarlison",aliases:[]},{display:"Raheem Sterling",aliases:["sterling"]},{display:"Bukayo Saka",aliases:["saka"]},{display:"Álvaro Morata",aliases:["morata"]},{display:"Mehdi Taremi",aliases:["taremi"]},{display:"Enner Valencia",aliases:["valencia"]},{display:"Gareth Bale",aliases:["bale"]}]},
+  // 18
+  {q:"Jugadors del Barça del Sextete 2009",meta:"Els jugadors del FC Barcelona que van guanyar els 6 títols el 2009",type:"player",answers:[{display:"Víctor Valdés",aliases:["valdes"]},{display:"Dani Alves",aliases:["alves"]},{display:"Carles Puyol",aliases:["puyol"]},{display:"Gerard Piqué",aliases:["pique"]},{display:"Eric Abidal",aliases:["abidal"]},{display:"Sylvinho",aliases:[]},{display:"Sergio Busquets",aliases:["busquets","busi"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"Seydou Keïta",aliases:["keita"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Thierry Henry",aliases:["henry"]},{display:"Samuel Eto'o",aliases:["etoo"]},{display:"Zlatan Ibrahimović",aliases:["zlatan","ibra"]},{display:"Pedro",aliases:["pedro rodriguez"]}]},
+  // 19
+  {q:"Jugadors del Bayern Munich campions de la Champions 2019/20",meta:"L'onze del Bayern a la final de Lisboa contra el PSG",type:"player",answers:[{display:"Manuel Neuer",aliases:["neuer"]},{display:"Joshua Kimmich",aliases:["kimmich"]},{display:"Jerome Boateng",aliases:["boateng"]},{display:"David Alaba",aliases:["alaba"]},{display:"Alphonso Davies",aliases:["davies","alphonso"]},{display:"Leon Goretzka",aliases:["goretzka"]},{display:"Thiago Alcântara",aliases:["thiago"]},{display:"Thomas Müller",aliases:["muller"]},{display:"Kingsley Coman",aliases:["coman"]},{display:"Serge Gnabry",aliases:["gnabry"]},{display:"Robert Lewandowski",aliases:["lewandowski","lewy"]}]},
+  // 20
+  {q:"Màxims golejadors de la história de la Selecció Espanyola",meta:"Els futbolistes amb més gols marcats amb la Selecció Espanyola",type:"player",answers:[{display:"David Villa",aliases:["villa","el guaje"]},{display:"Raúl",aliases:["raul"]},{display:"Fernando Torres",aliases:["torres","el nino"]},{display:"David Silva",aliases:["silva"]},{display:"Álvaro Morata",aliases:["morata"]},{display:"Fernando Hierro",aliases:["hierro"]},{display:"Emilio Butragueño",aliases:["butragueno"]},{display:"Michel",aliases:[]},{display:"Martín Vázquez",aliases:["martin vazquez"]},{display:"Julio Salinas",aliases:["salinas"]}]},
+  // 21
+  {q:"Equips guanyadors de la Copa del Rei (últims 20 anys)",meta:"Clubs que han guanyat la Copa del Rei des de 2005",type:"team",answers:[{display:"FC Barcelona",aliases:["barça","barca"]},{display:"Real Madrid",aliases:["madrid"]},{display:"Athletic Club",aliases:["athletic","bilbao"]},{display:"Sevilla",aliases:[]},{display:"Real Betis",aliases:["betis"]},{display:"Valencia",aliases:[]},{display:"Deportivo de La Coruña",aliases:["deportivo"]},{display:"Espanyol",aliases:[]}]},
+  // 22
+  {q:"Jugadors del Manchester City campions 2022/23 (Treble)",meta:"L'onze del City a la final de la Champions contra l'Inter",type:"player",answers:[{display:"Ederson",aliases:[]},{display:"Kyle Walker",aliases:["walker"]},{display:"Manuel Akanji",aliases:["akanji"]},{display:"Rúben Dias",aliases:["dias","ruben dias"]},{display:"João Cancelo",aliases:["cancelo"]},{display:"Rodri",aliases:[]},{display:"Kevin De Bruyne",aliases:["de bruyne","kdb"]},{display:"Bernardo Silva",aliases:["bernardo"]},{display:"Ilkay Gündogan",aliases:["gundogan"]},{display:"Phil Foden",aliases:["foden"]},{display:"Erling Haaland",aliases:["haaland"]}]},
+  // 23
+  {q:"Jugadors que han marcat al Clásico (Barça vs Madrid) a la Champions",meta:"Futbolistes que han marcat en el Clásico de Champions League",type:"player",answers:[{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Karim Benzema",aliases:["benzema"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"Sergio Ramos",aliases:["ramos"]},{display:"Gerard Piqué",aliases:["pique"]},{display:"Marcelo",aliases:[]},{display:"Thierry Henry",aliases:["henry"]},{display:"Samuel Eto'o",aliases:["etoo"]},{display:"Gonzalo Higuaín",aliases:["higuain"]}]},
+  // 24
+  {q:"Seleccions participants al Mundial 2022 (Qatar) — Grup A al D",meta:"Les 16 seleccions dels grups A, B, C i D del Mundial 2022",type:"team",answers:[{display:"Qatar",aliases:[]},{display:"Equador",aliases:["ecuador"]},{display:"Senegal",aliases:[]},{display:"Països Baixos",aliases:["holanda","netherlands"]},{display:"Anglaterra",aliases:["england","inglaterra"]},{display:"Iran",aliases:[]},{display:"Estats Units",aliases:["usa","eeuu"]},{display:"Gal·les",aliases:["wales","gales"]},{display:"Argentina",aliases:[]},{display:"Aràbia Saudita",aliases:["arabia saudita","saudi arabia"]},{display:"Mèxic",aliases:["mexico"]},{display:"Polònia",aliases:["polonia","poland"]},{display:"França",aliases:["france","francia"]},{display:"Austràlia",aliases:["australia"]},{display:"Dinamarca",aliases:["denmark","dinamarca"]},{display:"Tunísia",aliases:["tunez","tunisia"]}]},
+  // 25
+  {q:"Jugadors del Inter de Milà campions de la Champions 2009/10",meta:"L'onze de l'Inter a la final de Madrid contra el Bayern",type:"player",answers:[{display:"Júlio César",aliases:["julio cesar"]},{display:"Maicon",aliases:[]},{display:"Lúcio",aliases:["lucio"]},{display:"Walter Samuel",aliases:["samuel"]},{display:"Cristian Chivu",aliases:["chivu"]},{display:"Javier Zanetti",aliases:["zanetti"]},{display:"Dejan Stanković",aliases:["stankovic"]},{display:"Wesley Sneijder",aliases:["sneijder"]},{display:"Esteban Cambiasso",aliases:["cambiasso"]},{display:"Samuel Eto'o",aliases:["etoo"]},{display:"Diego Milito",aliases:["milito"]}]},
+  // 26
+  {q:"Equips guanyadors de la Premier League (era Premier des de 1992)",meta:"Tots els clubs que han guanyat la Premier League",type:"team",answers:[{display:"Manchester United",aliases:["man utd","united"]},{display:"Manchester City",aliases:["man city","city"]},{display:"Chelsea",aliases:[]},{display:"Arsenal",aliases:["gunners"]},{display:"Leicester City",aliases:["leicester"]},{display:"Blackburn Rovers",aliases:["blackburn"]}]},
+  // 27
+  {q:"Jugadors brasilers Balón de Oro",meta:"Futbolistes brasilers que han guanyat el Balón de Oro",type:"player",answers:[{display:"Ronaldo",aliases:["ronaldo fenomeno","r9"]},{display:"Ronaldinho",aliases:["dinho"]},{display:"Rivaldo",aliases:[]},{display:"Kaká",aliases:["kaka"]}]},
+  // 28
+  {q:"Jugadors de la Juventus campions de la Champions 1995/96",meta:"L'onze de la Juventus a la final contra l'Ajax",type:"player",answers:[{display:"Angelo Peruzzi",aliases:["peruzzi"]},{display:"Moreno Torricelli",aliases:["torricelli"]},{display:"Paolo Montero",aliases:["montero"]},{display:"Ciro Ferrara",aliases:["ferrara"]},{display:"Gianluca Pessotto",aliases:["pessotto"]},{display:"Antonio Conte",aliases:["conte"]},{display:"Paulo Sousa",aliases:["sousa"]},{display:"Deschamps",aliases:["didier deschamps"]},{display:"Zinedine Zidane",aliases:["zidane"]},{display:"Fabrizio Ravanelli",aliases:["ravanelli"]},{display:"Gianluca Vialli",aliases:["vialli"]}]},
+  // 29
+  {q:"Màxims golejadors de la história de la Champions / Copa d'Europa",meta:"Top golejadors de tota la história de la competició europea de clubs",type:"player",answers:[{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Robert Lewandowski",aliases:["lewandowski","lewy"]},{display:"Karim Benzema",aliases:["benzema"]},{display:"Raúl",aliases:["raul"]},{display:"Ruud van Nistelrooy",aliases:["van nistelrooy"]},{display:"Thomas Müller",aliases:["muller"]},{display:"Andriy Shevchenko",aliases:["shevchenko"]},{display:"Zlatan Ibrahimović",aliases:["zlatan","ibra"]},{display:"Thierry Henry",aliases:["henry"]}]},
+  // 30
+  {q:"Jugadors del França campions del Mundial 1998",meta:"Els jugadors que van guanyar el Mundial de França 1998",type:"player",answers:[{display:"Fabien Barthez",aliases:["barthez"]},{display:"Lilian Thuram",aliases:["thuram"]},{display:"Marcel Desailly",aliases:["desailly"]},{display:"Laurent Blanc",aliases:["blanc"]},{display:"Bixente Lizarazu",aliases:["lizarazu"]},{display:"Didier Deschamps",aliases:["deschamps"]},{display:"Emmanuel Petit",aliases:["petit"]},{display:"Zinedine Zidane",aliases:["zidane","zizou"]},{display:"Youri Djorkaeff",aliases:["djorkaeff"]},{display:"Stéphane Guivarc'h",aliases:["guivarch"]},{display:"Thierry Henry",aliases:["henry"]}]},
+  // 31
+  {q:"Equips que han guanyat la Lliga espanyola (LaLiga)",meta:"Tots els clubs campions de LaLiga de tots els temps",type:"team",answers:[{display:"Real Madrid",aliases:["madrid"]},{display:"FC Barcelona",aliases:["barça","barca"]},{display:"Atlético de Madrid",aliases:["atletico","atleti"]},{display:"Athletic Club",aliases:["athletic","bilbao"]},{display:"Valencia",aliases:[]},{display:"Real Sociedad",aliases:["sociedad"]},{display:"Deportivo de La Coruña",aliases:["deportivo"]},{display:"Sevilla",aliases:[]},{display:"Real Betis",aliases:["betis"]},{display:"Espanyol",aliases:[]}]},
+  // 32
+  {q:"Jugadors del Argentina campions del Mundial 2022",meta:"Els jugadors que van guanyar el Mundial de Qatar amb Argentina",type:"player",answers:[{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Emiliano Martínez",aliases:["dibu","dibu martinez"]},{display:"Nahuel Molina",aliases:["molina"]},{display:"Cristian Romero",aliases:["romero","cuti"]},{display:"Nicolás Otamendi",aliases:["otamendi"]},{display:"Marcos Acuña",aliases:["acuna"]},{display:"Rodrigo De Paul",aliases:["de paul"]},{display:"Leandro Paredes",aliases:["paredes"]},{display:"Alexis Mac Allister",aliases:["mac allister"]},{display:"Ángel Di María",aliases:["di maria","fideo"]},{display:"Julián Álvarez",aliases:["alvarez","julian"]}]},
+  // 33
+  {q:"Jugadors portuguesos al Real Madrid",meta:"Futbolistes de Portugal que han jugat al Real Madrid",type:"player",answers:[{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Luís Figo",aliases:["figo"]},{display:"Rúben Dias",aliases:["dias"]},{display:"João Cancelo",aliases:["cancelo"]},{display:"Nuno Gomes",aliases:["nuno gomes"]},{display:"Fernando Couto",aliases:["couto"]},{display:"Vítor Baía",aliases:["baia"]},{display:"Deco",aliases:[]},{display:"Pepe",aliases:[]},{display:"Ricardo Carvalho",aliases:["carvalho"]}]},
+  // 34
+  {q:"Jugadors del Chelsea campions de la Champions 2020/21",meta:"L'onze del Chelsea a la final de Porto contra el Manchester City",type:"player",answers:[{display:"Édouard Mendy",aliases:["mendy"]},{display:"César Azpilicueta",aliases:["azpilicueta","azpi"]},{display:"Antonio Rüdiger",aliases:["rudiger"]},{display:"Thiago Silva",aliases:["thiago silva"]},{display:"Marcos Alonso",aliases:["alonso"]},{display:"N'Golo Kanté",aliases:["kante"]},{display:"Jorginho",aliases:[]},{display:"Mason Mount",aliases:["mount"]},{display:"Christian Pulisic",aliases:["pulisic"]},{display:"Timo Werner",aliases:["werner"]},{display:"Kai Havertz",aliases:["havertz"]}]},
+  // 35
+  {q:"Jugadors amb més aparicions a la Champions League",meta:"Els jugadors que han jugat més partits en tota la história de la Champions",type:"player",answers:[{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Iker Casillas",aliases:["casillas"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Karim Benzema",aliases:["benzema"]},{display:"Ryan Giggs",aliases:["giggs"]},{display:"Clarence Seedorf",aliases:["seedorf"]},{display:"Raúl",aliases:["raul"]},{display:"Luka Modric",aliases:["modric"]},{display:"Sergio Ramos",aliases:["ramos"]}]},
+  // 36
+  {q:"Equips de la Champions League 2024/25 (fase de lliga)",meta:"Els 36 clubs participants a la fase de lliga de la Champions 2024/25",type:"team",answers:[{display:"Real Madrid",aliases:["madrid"]},{display:"FC Barcelona",aliases:["barça","barca"]},{display:"Bayern Munich",aliases:["bayern"]},{display:"Manchester City",aliases:["man city","city"]},{display:"Paris Saint-Germain",aliases:["psg"]},{display:"Liverpool",aliases:["lfc"]},{display:"Inter Milan",aliases:["inter"]},{display:"Borussia Dortmund",aliases:["dortmund","bvb"]},{display:"Atlético de Madrid",aliases:["atletico","atleti"]},{display:"Bayer Leverkusen",aliases:["leverkusen"]},{display:"Atalanta",aliases:[]},{display:"Juventus",aliases:["juve"]},{display:"Benfica",aliases:[]},{display:"Arsenal",aliases:["gunners"]},{display:"Monaco",aliases:[]},{display:"Feyenoord",aliases:[]},{display:"Sporting de Lisboa",aliases:["sporting"]},{display:"Celtic",aliases:[]},{display:"Aston Villa",aliases:["villa"]},{display:"Club Brugge",aliases:["brugge"]},{display:"Shakhtar Donetsk",aliases:["shakhtar"]},{display:"AC Milan",aliases:["milan"]},{display:"Dinamo Zagreb",aliases:["dinamo","zagreb"]},{display:"Girona",aliases:[]},{display:"Stuttgart",aliases:[]},{display:"PSV Eindhoven",aliases:["psv"]},{display:"Red Star Belgrade",aliases:["estrella roja","red star"]},{display:"RB Leipzig",aliases:["leipzig"]},{display:"Young Boys",aliases:[]},{display:"Bologna",aliases:[]},{display:"Lille",aliases:[]},{display:"Crvena zvezda",aliases:["crvena"]},{display:"Salzburg",aliases:["red bull salzburg"]},{display:"Slovan Bratislava",aliases:["slovan"]},{display:"Sturm Graz",aliases:["sturm"]},{display:"Sparta Praga",aliases:["sparta","sparta prague"]}]},
+  // 37
+  {q:"Jugadors del Barça que han marcat en 4 o més Champions",meta:"Jugadors del FC Barcelona que han marcat gols en 4 o més edicions de la Champions",type:"player",answers:[{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"Samuel Eto'o",aliases:["etoo"]},{display:"Dani Alves",aliases:["alves"]},{display:"Pedro",aliases:["pedro rodriguez"]},{display:"Sergio Busquets",aliases:["busquets","busi"]}]},
+  // 38
+  {q:"Jugadors del Brasil campions del Mundial 2002",meta:"L'equip del Brasil que va guanyar el Mundial de Corea/Japó 2002",type:"player",answers:[{display:"Marcos",aliases:[]},{display:"Lúcio",aliases:["lucio"]},{display:"Edmílson",aliases:["edmilson"]},{display:"Roque Júnior",aliases:["roque junior"]},{display:"Cafu",aliases:[]},{display:"Roberto Carlos",aliases:["roberto carlos"]},{display:"Gilberto Silva",aliases:["gilberto"]},{display:"Ronaldinho",aliases:["dinho"]},{display:"Rivaldo",aliases:[]},{display:"Ronaldo",aliases:["r9","ronaldo fenomeno"]},{display:"Kléberson",aliases:["kleberson"]}]},
+  // 39
+  {q:"Entrenadors campions de LaLiga (últims 20 anys)",meta:"Tècnics que han guanyat LaLiga des de 2005",type:"player",answers:[{display:"Frank Rijkaard",aliases:["rijkaard"]},{display:"Pep Guardiola",aliases:["guardiola","pep"]},{display:"José Mourinho",aliases:["mourinho","mou"]},{display:"Tito Vilanova",aliases:["vilanova"]},{display:"Carlo Ancelotti",aliases:["ancelotti"]},{display:"Luis Enrique",aliases:["luis enrique"]},{display:"Zinedine Zidane",aliases:["zidane"]},{display:"Diego Simeone",aliases:["simeone","cholo"]},{display:"Quique Setién",aliases:["setien"]},{display:"Ronald Koeman",aliases:["koeman"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Hansi Flick",aliases:["flick"]}]},
+  // 40
+  {q:"Jugadors de l'Atlético de Madrid campions de LaLiga 2020/21",meta:"L'onze de l'Atleti a la temporada del títol de LaLiga 2020/21",type:"player",answers:[{display:"Jan Oblak",aliases:["oblak"]},{display:"Kieran Trippier",aliases:["trippier"]},{display:"Stefan Savić",aliases:["savic"]},{display:"José Giménez",aliases:["gimenez"]},{display:"Mario Hermoso",aliases:["hermoso"]},{display:"Marcos Llorente",aliases:["llorente"]},{display:"Koke",aliases:[]},{display:"Saúl Ñíguez",aliases:["saul"]},{display:"Yannick Carrasco",aliases:["carrasco"]},{display:"Luis Suárez",aliases:["suarez"]},{display:"João Félix",aliases:["felix","joao felix"]}]},
+  // 41
+  {q:"Jugadors de la Selecció Francesa campions del Mundial 2018",meta:"Els jugadors que van guanyar el Mundial de Rússia 2018 amb França",type:"player",answers:[{display:"Hugo Lloris",aliases:["lloris"]},{display:"Raphaël Varane",aliases:["varane"]},{display:"Samuel Umtiti",aliases:["umtiti"]},{display:"Benjamin Pavard",aliases:["pavard"]},{display:"Lucas Hernández",aliases:["lucas hernandez"]},{display:"N'Golo Kanté",aliases:["kante"]},{display:"Blaise Matuidi",aliases:["matuidi"]},{display:"Paul Pogba",aliases:["pogba"]},{display:"Kylian Mbappé",aliases:["mbappe"]},{display:"Antoine Griezmann",aliases:["griezmann"]},{display:"Olivier Giroud",aliases:["giroud"]}]},
+  // 42
+  {q:"Jugadors del Real Madrid campions de la Champions 2015/16",meta:"L'onze del Madrid a la final de Milà contra l'Atlético",type:"player",answers:[{display:"Keylor Navas",aliases:["navas","keylor"]},{display:"Dani Carvajal",aliases:["carvajal"]},{display:"Raphaël Varane",aliases:["varane"]},{display:"Sergio Ramos",aliases:["ramos"]},{display:"Marcelo",aliases:[]},{display:"Casemiro",aliases:[]},{display:"Luka Modric",aliases:["modric"]},{display:"Toni Kroos",aliases:["kroos"]},{display:"Gareth Bale",aliases:["bale"]},{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Karim Benzema",aliases:["benzema"]}]},
+  // 43
+  {q:"Màxims golejadors de la história de LaLiga",meta:"Els jugadors amb més gols marcats a LaLiga de tots els temps",type:"player",answers:[{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Telmo Zarra",aliases:["zarra"]},{display:"Hugo Sánchez",aliases:["hugo sanchez"]},{display:"Raúl",aliases:["raul"]},{display:"Alfredo Di Stéfano",aliases:["di stefano"]},{display:"César",aliases:[]},{display:"David Villa",aliases:["villa"]},{display:"Pahiño",aliases:["pahino"]},{display:"Carlos Santillana",aliases:["santillana"]}]},
+  // 44
+  {q:"Jugadors del AC Milan campions de la Champions 2002/03",meta:"L'onze del Milan a la final a Manchester contra la Juventus",type:"player",answers:[{display:"Dida",aliases:[]},{display:"Cafu",aliases:[]},{display:"Alessandro Nesta",aliases:["nesta"]},{display:"Costacurta",aliases:["costacurta","billy costacurta"]},{display:"Paolo Maldini",aliases:["maldini"]},{display:"Gennaro Gattuso",aliases:["gattuso"]},{display:"Andrea Pirlo",aliases:["pirlo"]},{display:"Clarence Seedorf",aliases:["seedorf"]},{display:"Rui Costa",aliases:["rui costa"]},{display:"Filippo Inzaghi",aliases:["inzaghi","pippo"]},{display:"Andriy Shevchenko",aliases:["shevchenko","sheva"]}]},
+  // 45
+  {q:"Jugadors del PSG campions de Ligue 1 (equip actual)",meta:"Els jugadors del PSG que han format part de l'equip campió les últimes temporades",type:"player",answers:[{display:"Gianluigi Donnarumma",aliases:["donnarumma"]},{display:"Achraf Hakimi",aliases:["hakimi"]},{display:"Marquinhos",aliases:[]},{display:"Presnel Kimpembe",aliases:["kimpembe"]},{display:"Nuno Mendes",aliases:["nuno mendes"]},{display:"Vitinha",aliases:[]},{display:"Marco Verratti",aliases:["verratti"]},{display:"Fabian Ruiz",aliases:["fabian","fabián ruiz"]},{display:"Ousmane Dembélé",aliases:["dembele"]},{display:"Kylian Mbappé",aliases:["mbappe"]},{display:"Gonçalo Ramos",aliases:["ramos","goncalo ramos"]}]},
+  // 46
+  {q:"Jugadors del Leicester City campions de la Premier 2015/16",meta:"Els herois del miracle del Leicester que van guanyar la Premier",type:"player",answers:[{display:"Kasper Schmeichel",aliases:["schmeichel"]},{display:"Danny Simpson",aliases:["simpson"]},{display:"Wes Morgan",aliases:["morgan"]},{display:"Robert Huth",aliases:["huth"]},{display:"Christian Fuchs",aliases:["fuchs"]},{display:"N'Golo Kanté",aliases:["kante"]},{display:"Danny Drinkwater",aliases:["drinkwater"]},{display:"Riyad Mahrez",aliases:["mahrez"]},{display:"Marc Albrighton",aliases:["albrighton"]},{display:"Shinji Okazaki",aliases:["okazaki"]},{display:"Jamie Vardy",aliases:["vardy"]}]},
+  // 47
+  {q:"Jugadors de la Selecció Espanyola campions de l'Eurocopa 2008",meta:"Els jugadors que van guanyar l'Eurocopa 2008 a Àustria/Suïssa",type:"player",answers:[{display:"Iker Casillas",aliases:["casillas"]},{display:"Sergio Ramos",aliases:["ramos"]},{display:"Carlos Marchena",aliases:["marchena"]},{display:"Carles Puyol",aliases:["puyol"]},{display:"Joan Capdevila",aliases:["capdevila"]},{display:"Marcos Senna",aliases:["senna"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"David Silva",aliases:["silva"]},{display:"David Villa",aliases:["villa"]},{display:"Fernando Torres",aliases:["torres","el nino"]}]},
+  // 48
+  {q:"Jugadors africans que han guanyat la Champions League",meta:"Futbolistes d'àfrica que han aixecat la Copa d'Europa",type:"player",answers:[{display:"Samuel Eto'o",aliases:["etoo"]},{display:"Didier Drogba",aliases:["drogba"]},{display:"Sadio Mané",aliases:["mane"]},{display:"Mohamed Salah",aliases:["salah"]},{display:"Riyad Mahrez",aliases:["mahrez"]},{display:"Naby Keïta",aliases:["keita"]},{display:"Pierre-Emerick Aubameyang",aliases:["aubameyang","auba"]},{display:"Michael Essien",aliases:["essien"]},{display:"Yaya Touré",aliases:["yaya toure"]},{display:"George Weah",aliases:["weah"]}]},
+  // 49
+  {q:"Entrenadors campions de la Champions League",meta:"Tots els tècnics que han guanyat la Copa d'Europa com a entrenadors",type:"player",answers:[{display:"Carlo Ancelotti",aliases:["ancelotti"]},{display:"Pep Guardiola",aliases:["guardiola","pep"]},{display:"José Mourinho",aliases:["mourinho"]},{display:"Zinedine Zidane",aliases:["zidane"]},{display:"Jürgen Klopp",aliases:["klopp"]},{display:"Alex Ferguson",aliases:["ferguson","sir alex"]},{display:"Jupp Heynckes",aliases:["heynckes"]},{display:"Thomas Tuchel",aliases:["tuchel"]},{display:"Arrigo Sacchi",aliases:["sacchi"]},{display:"Fabio Capello",aliases:["capello"]},{display:"Ottmar Hitzfeld",aliases:["hitzfeld"]},{display:"Vicente del Bosque",aliases:["del bosque"]}]},
+  // 50
+  {q:"Jugadors del Real Madrid campions de LaLiga 2021/22",meta:"L'onze del Madrid en la temporada del títol de LaLiga i Champions 2021/22",type:"player",answers:[{display:"Thibaut Courtois",aliases:["courtois"]},{display:"Dani Carvajal",aliases:["carvajal"]},{display:"Éder Militão",aliases:["militao"]},{display:"David Alaba",aliases:["alaba"]},{display:"Ferland Mendy",aliases:["mendy"]},{display:"Casemiro",aliases:[]},{display:"Luka Modric",aliases:["modric"]},{display:"Toni Kroos",aliases:["kroos"]},{display:"Federico Valverde",aliases:["valverde"]},{display:"Karim Benzema",aliases:["benzema"]},{display:"Vinicius Jr",aliases:["vini","vinicius"]}]},
+  // 51
+  {q:"Jugadors que han marcat en 5 o més Mundials",meta:"Futbolistes que han marcat gols en almenys 5 Copes del Món",type:"player",answers:[{display:"Pelé",aliases:["pele"]},{display:"Uwe Seeler",aliases:["seeler"]},{display:"Miroslav Klose",aliases:["klose"]},{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Lionel Messi",aliases:["messi","leo"]}]},
+  // 52
+  {q:"Clubs de la Premier League fundats abans de 1900",meta:"Equips anglesos de la Premier fundats al segle XIX",type:"team",answers:[{display:"Notts County",aliases:[]},{display:"Stoke City",aliases:["stoke"]},{display:"Nottingham Forest",aliases:["nottingham","forest"]},{display:"Sheffield Wednesday",aliases:["sheffield wednesday"]},{display:"Bolton Wanderers",aliases:["bolton"]},{display:"Everton",aliases:[]},{display:"Wolverhampton",aliases:["wolves"]},{display:"Blackburn Rovers",aliases:["blackburn"]},{display:"Aston Villa",aliases:["villa"]},{display:"West Bromwich Albion",aliases:["west brom","wba"]},{display:"Arsenal",aliases:["gunners"]},{display:"Sunderland",aliases:[]},{display:"Newcastle United",aliases:["newcastle"]},{display:"Liverpool",aliases:["lfc"]},{display:"Manchester City",aliases:["man city"]},{display:"Chelsea",aliases:[]},{display:"Tottenham Hotspur",aliases:["tottenham","spurs"]},{display:"Manchester United",aliases:["man utd","united"]}]},
+  // 53
+  {q:"Jugadors del Barça campions de la Champions 2014/15",meta:"L'onze del Barça a la final de Berlín contra la Juventus",type:"player",answers:[{display:"Marc-André ter Stegen",aliases:["ter stegen","terstegen"]},{display:"Dani Alves",aliases:["alves"]},{display:"Gerard Piqué",aliases:["pique"]},{display:"Javier Mascherano",aliases:["mascherano"]},{display:"Jordi Alba",aliases:["alba"]},{display:"Sergio Busquets",aliases:["busquets","busi"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"Lionel Messi",aliases:["messi","leo"]},{display:"Neymar",aliases:[]},{display:"Luis Suárez",aliases:["suarez"]}]},
+  // 54
+  {q:"Màxims golejadors de la história de la Selecció Alemanya",meta:"Els jugadors amb més gols amb la Mannschaft de tots els temps",type:"player",answers:[{display:"Miroslav Klose",aliases:["klose"]},{display:"Gerd Müller",aliases:["muller","el bombardero"]},{display:"Lukas Podolski",aliases:["podolski"]},{display:"Rudi Völler",aliases:["voller"]},{display:"Karl-Heinz Rummenigge",aliases:["rummenigge"]},{display:"Uwe Seeler",aliases:["seeler"]},{display:"Thomas Müller",aliases:["thomas muller"]},{display:"Jürgen Klinsmann",aliases:["klinsmann"]},{display:"Helmut Haller",aliases:["haller"]},{display:"Max Morlock",aliases:["morlock"]}]},
+  // 55
+  {q:"Jugadors del Manchester United campions Champions 1998/99",meta:"L'onze del United a la final de Barcelona contra el Bayern",type:"player",answers:[{display:"Peter Schmeichel",aliases:["schmeichel"]},{display:"Gary Neville",aliases:["neville","gary neville"]},{display:"Ronny Johnsen",aliases:["johnsen"]},{display:"Jaap Stam",aliases:["stam"]},{display:"Denis Irwin",aliases:["irwin"]},{display:"Roy Keane",aliases:["keane"]},{display:"David Beckham",aliases:["beckham"]},{display:"Nicky Butt",aliases:["butt"]},{display:"Ryan Giggs",aliases:["giggs"]},{display:"Teddy Sheringham",aliases:["sheringham"]},{display:"Ole Gunnar Solskjær",aliases:["solskjaer","ole"]}]},
+  // 56
+  {q:"Jugadors de la Selecció Italiana campions del Mundial 2006",meta:"Els jugadors que van guanyar el Mundial d'Alemanya 2006 amb Itàlia",type:"player",answers:[{display:"Gianluigi Buffon",aliases:["buffon"]},{display:"Fabio Cannavaro",aliases:["cannavaro"]},{display:"Alessandro Nesta",aliases:["nesta"]},{display:"Marco Materazzi",aliases:["materazzi"]},{display:"Fabio Grosso",aliases:["grosso"]},{display:"Gennaro Gattuso",aliases:["gattuso"]},{display:"Andrea Pirlo",aliases:["pirlo"]},{display:"Francesco Totti",aliases:["totti"]},{display:"Daniele De Rossi",aliases:["de rossi"]},{display:"Luca Toni",aliases:["toni"]},{display:"Alberto Gilardino",aliases:["gilardino"]}]},
+  // 57
+  {q:"Jugadors del Borussia Dortmund campions Champions 1996/97",meta:"L'onze del BVB a la final de Munic contra la Juventus",type:"player",answers:[{display:"Stefan Klos",aliases:["klos"]},{display:"Jürgen Kohler",aliases:["kohler"]},{display:"Matthias Sammer",aliases:["sammer"]},{display:"Paulo Sousa",aliases:["sousa"]},{display:"Christian Wörns",aliases:["worns"]},{display:"Andreas Möller",aliases:["moller"]},{display:"Stéphane Chapuisat",aliases:["chapuisat"]},{display:"Karlheinz Riedle",aliases:["riedle"]},{display:"Lars Ricken",aliases:["ricken"]},{display:"Jörg Heinrich",aliases:["heinrich"]},{display:"Michael Zorc",aliases:["zorc"]}]},
+  // 58
+  {q:"Jugadors del Barça campions de la Champions 2005/06",meta:"L'onze del Barça a la final de París contra l'Arsenal",type:"player",answers:[{display:"Víctor Valdés",aliases:["valdes"]},{display:"Oleguer",aliases:[]},{display:"Carles Puyol",aliases:["puyol"]},{display:"Rafael Márquez",aliases:["marquez"]},{display:"Gianluca Zambrotta",aliases:["zambrotta"]},{display:"Mark van Bommel",aliases:["van bommel"]},{display:"Xavi Hernández",aliases:["xavi"]},{display:"Andrés Iniesta",aliases:["iniesta"]},{display:"Deco",aliases:[]},{display:"Samuel Eto'o",aliases:["etoo"]},{display:"Ronaldinho",aliases:["dinho"]}]},
+  // 59
+  {q:"Jugadors que han guanyat la Champions amb dos clubs diferents",meta:"Futbolistes que han aixecat la Champions amb 2 equips distints",type:"player",answers:[{display:"Clarence Seedorf",aliases:["seedorf"]},{display:"Marcel Desailly",aliases:["desailly"]},{display:"Paulo Sousa",aliases:["sousa"]},{display:"Samuel Eto'o",aliases:["etoo"]},{display:"Zlatan Ibrahimović",aliases:["zlatan","ibra"]},{display:"Xabi Alonso",aliases:["alonso"]},{display:"Cristiano Ronaldo",aliases:["cristiano","cr7"]},{display:"Gareth Bale",aliases:["bale"]},{display:"Raphaël Varane",aliases:["varane"]},{display:"Pepe",aliases:[]}]},
+  // 60
+  {q:"Jugadors del Ajax campions de la Champions 1994/95",meta:"L'onze de l'Ajax a la final de Viena contra el Milan",type:"player",answers:[{display:"Edwin van der Sar",aliases:["van der sar"]},{display:"Michael Reiziger",aliases:["reiziger"]},{display:"Frank Rijkaard",aliases:["rijkaard"]},{display:"Danny Blind",aliases:["blind"]},{display:"Marc Overmars",aliases:["overmars"]},{display:"Edgar Davids",aliases:["davids"]},{display:"Ronald de Boer",aliases:["ronald de boer"]},{display:"Frank de Boer",aliases:["frank de boer"]},{display:"Clarence Seedorf",aliases:["seedorf"]},{display:"Patrick Kluivert",aliases:["kluivert"]},{display:"Jari Litmanen",aliases:["litmanen"]}]},
+];
+
+// ===================== PROGRAMACIÓ DIÀRIA =====================
+const BASE_DATE = new Date('2026-04-06').getTime();
+const MS_DAY = 86400000;
+
+function getTodayIndex() {
+  const saved = localStorage.getItem('schedule');
+  if (saved) {
+    const schedule = JSON.parse(saved);
+    const todayKey = getTodayKey();
+    if (schedule[todayKey] !== undefined) return schedule[todayKey];
+  }
+  const dayNum = Math.floor((Date.now() - BASE_DATE) / MS_DAY);
+  return ((dayNum % ALL_LISTS.length) + ALL_LISTS.length) % ALL_LISTS.length;
+}
+
+function getTodayKey() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function getDateKey(offset) {
+  const d = new Date(Date.now() + offset * MS_DAY);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function getDateLabel(offset) {
+  const d = new Date(Date.now() + offset * MS_DAY);
+  const days = ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
+  const months = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+  return days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+}
+
+// ===================== JOC =====================
+const BASE_TIME=100,BONUS=5;
+let list,found,tmr,timeLeft,maxTime,active,ddItems=[],ddIdx=-1;
+let currentListIdx = getTodayIndex();
+
+function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').trim();}
+const DBP_N=DB_PLAYERS.map(norm),DBT_N=DB_TEAMS.map(norm);
+function allVariants(ans){const v=[norm(ans.display),...ans.aliases.map(norm)];const p=norm(ans.display).split(' ');if(p.length>1){v.push(p[0]);v.push(p[p.length-1]);}return[...new Set(v)];}
+function isListMatch(input,ans){return allVariants(ans).some(v=>v===norm(input));}
+function searchDB(input){if(!input||input.length<2)return[];const n=norm(input);const db=list.type==='player'?DB_PLAYERS:DB_TEAMS;const dbN=list.type==='player'?DBP_N:DBT_N;const s=[],c=[];db.forEach((name,i)=>{if(dbN[i].startsWith(n))s.push(name);else if(dbN[i].includes(n))c.push(name);});return[...s,...c].slice(0,8);}
+function hl(text,query){const nt=norm(text),n=norm(query);const pos=nt.indexOf(n);if(pos<0)return text;return text.slice(0,pos)+'<span class="hl">'+text.slice(pos,pos+query.length)+'</span>'+text.slice(pos+query.length);}
+
+function renderDD(val){const dd=document.getElementById('dd');if(!val||val.length<2){dd.classList.add('hidden');ddItems=[];ddIdx=-1;return;}const res=searchDB(val);if(!res.length){dd.classList.add('hidden');ddItems=[];ddIdx=-1;return;}ddItems=res.map(n=>({name:n}));dd.innerHTML='';res.forEach((name,si)=>{const div=document.createElement('div');div.className='dd-item'+(si===0?' first':'');div.innerHTML=hl(name,val);div.addEventListener('mousedown',e=>{e.preventDefault();pickItem(si);});dd.appendChild(div);});ddIdx=-1;dd.classList.remove('hidden');}
+function updateSel(){const items=document.querySelectorAll('.dd-item');items.forEach((el,i)=>{el.classList.remove('first','sel');if(ddIdx===-1){if(i===0)el.classList.add('first');}else{if(i===ddIdx)el.classList.add('sel');}});}
+function hideDD(){document.getElementById('dd').classList.add('hidden');ddItems=[];ddIdx=-1;}
+function pickItem(si){const item=ddItems[si];if(!item)return;doSubmit(item.name);}
+
+function doSubmit(val){if(!active)return;const v=(val!==undefined?val:document.getElementById('inp').value).trim();if(!v)return;let hit=-1;list.answers.forEach((ans,i)=>{if(!found[i]&&isListMatch(v,ans))hit=i;});if(hit>=0){found[hit]=true;timeLeft+=BONUS;maxTime=Math.max(maxTime,timeLeft);const slot=document.getElementById('slot'+hit);slot.className='slot found';slot.innerHTML='<span class="num">'+(hit+1)+'</span><span class="name">'+list.answers[hit].display+'</span>';document.getElementById('s-found').textContent=found.filter(Boolean).length;updateTimer();updateBar();animPlus();if(found.every(Boolean))endGame();}else{flash('"'+v+'" no és a la llista',true);}document.getElementById('inp').value='';hideDD();document.getElementById('inp').focus();}
+
+function initGame(){
+  list=ALL_LISTS[currentListIdx];
+  found=new Array(list.answers.length).fill(false);
+  timeLeft=BASE_TIME;maxTime=BASE_TIME;active=true;
+  document.getElementById('q-text').textContent=list.q;
+  document.getElementById('q-meta').textContent=list.meta;
+  document.getElementById('s-total').textContent=list.answers.length;
+  document.getElementById('s-found').textContent=0;
+  document.getElementById('inp').value='';
+  document.getElementById('inp').placeholder=list.type==='player'?'Escriu un jugador...':'Escriu un equip o selecció...';
+  hideDD();
+  document.getElementById('screen-game').classList.remove('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  renderGrid();updateTimer();updateBar();
+  clearInterval(tmr);tmr=setInterval(tick,1000);
+  document.getElementById('inp').focus();
+}
+
+function renderGrid(){const g=document.getElementById('grid');g.innerHTML='';list.answers.forEach((ans,i)=>{const d=document.createElement('div');d.className='slot'+(found[i]?' found':'');d.id='slot'+i;d.innerHTML='<span class="num">'+(i+1)+'</span><span class="name">'+(found[i]?ans.display:'?')+'</span>';g.appendChild(d);});}
+function tick(){if(!active)return;timeLeft=Math.max(0,timeLeft-1);updateTimer();updateBar();if(timeLeft<=0)endGame();}
+function updateTimer(){const m=Math.floor(timeLeft/60),s=timeLeft%60;const el=document.getElementById('s-time');el.textContent=m+':'+String(s).padStart(2,'0');el.className='stat-value timer'+(timeLeft<=30?' danger':timeLeft<=60?' warning':'');}
+function updateBar(){const pct=Math.max(0,timeLeft/maxTime*100);const b=document.getElementById('tbar');b.style.width=pct+'%';b.style.background=pct>50?'#4ecca3':pct>25?'#f6ad55':'#e94560';}
+function animPlus(){const el=document.getElementById('plus');el.className='plus-anim';void el.offsetWidth;el.className='plus-anim go';}
+function flash(msg,err){const el=document.getElementById('flash');el.textContent=msg;el.className='flash on'+(err?' err':' ok');clearTimeout(el._t);el._t=setTimeout(()=>el.className='flash',1600);}
+
+function endGame(){active=false;clearInterval(tmr);hideDD();list.answers.forEach((ans,i)=>{if(!found[i]){const s=document.getElementById('slot'+i);s.className='slot missed';s.innerHTML='<span class="num">'+(i+1)+'</span><span class="name">'+ans.display+'</span>';}});setTimeout(showResult,800);}
+
+function showResult(){
+  const total=list.answers.length,got=found.filter(Boolean).length,pct=got/total;
+  const emojis=['😅','😅','👊','⚽','⚽','🏆'];
+  const titles=['Cal estudiar més','Cal estudiar més','Passable','Bé!','Molt bé!','Llista perfecta!'];
+  const ei=Math.min(5,Math.floor(pct*6));
+  const squares=found.map(f=>f?'🟩':'🟥').join('');
+  const d=new Date();
+  const share='⚽ Futbol List-a · '+d.toLocaleDateString('ca-ES')+'\n'+list.q+'\n'+got+'/'+total+' '+squares;
+  document.getElementById('r-emoji').textContent=emojis[ei];
+  document.getElementById('r-title').textContent=titles[ei];
+  document.getElementById('r-score').textContent=got+'/'+total;
+  document.getElementById('r-sub').textContent='+'+got*BONUS+'s de bonus acumulats';
+  document.getElementById('r-share').textContent=share;
+  document.getElementById('screen-game').classList.add('hidden');
+  document.getElementById('screen-result').classList.remove('hidden');
+}
+function copyShare(){navigator.clipboard.writeText(document.getElementById('r-share').textContent).then(()=>flash('Copiat!',false));}
+function nextQ(){currentListIdx=(currentListIdx+1)%ALL_LISTS.length;initGame();}
+
+// ===================== ADMIN =====================
+function openAdmin(){
+  clearInterval(tmr);
+  document.getElementById('screen-game').classList.add('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-admin').classList.add('active');
+  renderSchedule();
+}
+function closeAdmin(){
+  document.getElementById('screen-admin').classList.remove('active');
+  document.getElementById('screen-game').classList.remove('hidden');
+  initGame();
+}
+
+function renderSchedule(){
+  const saved = JSON.parse(localStorage.getItem('schedule')||'{}');
+  const grid = document.getElementById('schedule-grid');
+  grid.innerHTML='';
+  const todayKey = getTodayKey();
+
+  for(let i=0;i<10;i++){
+    const key = getDateKey(i);
+    const label = getDateLabel(i);
+    const isToday = key===todayKey;
+    const currentVal = saved[key]!==undefined ? saved[key] : ((getTodayIndex()+i)%ALL_LISTS.length);
+
+    const div = document.createElement('div');
+    div.className='schedule-day';
+
+    let options='';
+    ALL_LISTS.forEach((l,idx)=>{
+      options+=`<option value="${idx}"${idx===currentVal?' selected':''}>${idx+1}. ${l.q}</option>`;
+    });
+
+    div.innerHTML=`
+      <div class="day-title">
+        ${label}${isToday?'<span class="current-badge">avui</span>':''}
+      </div>
+      <select id="sel-${key}">${options}</select>
+    `;
+    grid.appendChild(div);
+  }
+}
+
+function saveSchedule(){
+  const saved={};
+  for(let i=0;i<10;i++){
+    const key=getDateKey(i);
+    const sel=document.getElementById('sel-'+key);
+    if(sel) saved[key]=parseInt(sel.value);
+  }
+  localStorage.setItem('schedule',JSON.stringify(saved));
+  flash('Programació guardada!',false);
+  setTimeout(closeAdmin,1200);
+}
+
+// ===================== INIT =====================
+const inp=document.getElementById('inp');
+inp.addEventListener('input',e=>renderDD(e.target.value));
+inp.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){e.preventDefault();if(ddItems.length){ddIdx=Math.min(ddIdx+1,ddItems.length-1);updateSel();}}
+  else if(e.key==='ArrowUp'){e.preventDefault();if(ddItems.length){ddIdx=Math.max(ddIdx-1,-1);updateSel();}}
+  else if(e.key==='Enter'){e.preventDefault();if(ddItems.length>0&&ddIdx===-1)pickItem(0);else if(ddItems.length>0&&ddIdx>=0)pickItem(ddIdx);else doSubmit(inp.value.trim());}
+  else if(e.key==='Escape')hideDD();
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.input-wrap'))hideDD();});
+
+const days=['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
+const months=['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
+const now=new Date();
+document.getElementById('date-label').textContent=days[now.getDay()]+' '+now.getDate()+' de '+months[now.getMonth()];
+initGame();
+</script>
+</body>
+</html>
